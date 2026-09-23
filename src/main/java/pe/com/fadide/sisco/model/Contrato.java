@@ -1,56 +1,39 @@
 package pe.com.fadide.sisco.model;
-
 import jakarta.persistence.*;
 import lombok.*;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 
+@Entity
+@Table(name = "contratos")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Contrato {
-    @Entity
-    @Table(name = "roles")
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    public static class Rol {
 
-        @Id
-        @GeneratedValue(strategy = GenerationType.IDENTITY)
-        @Column(name = "id_rol")
-        private Long idRol;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_contrato")
+    private Long idContrato;
 
-        @Column(name = "nombre", nullable = false, unique = true, length = 50)
-        private String nombre;
-    }
+    @Column(name = "numero_contrato", nullable = false, unique = true, length = 50)
+    private String numeroContrato;
 
-    @Entity
-    @Table(name = "usuarios")
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    public static class Usuario {
+    @Column(name = "fecha_inicio", nullable = false)
+    private LocalDate fechaInicio;
 
-        @Id
-        @GeneratedValue(strategy = GenerationType.IDENTITY)
-        @Column(name = "id_usuario")
-        private Long idUsuario;
+    @Column(name = "fecha_fin", nullable = false)
+    private LocalDate fechaFin;
 
-        @Column(name = "nombre", nullable = false, length = 100)
-        private String nombre;
+    @Column(name = "monto_total", nullable = false, precision = 12, scale = 2)
+    private BigDecimal montoTotal;
 
-        @Column(name = "correo", nullable = false, unique = true, length = 100)
-        private String correo;
+    @Column(name = "estado", nullable = false, length = 30)
+    private String estado;
 
-        @Column(name = "password", nullable = false, length = 255)
-        private String password;
-
-        @Column(name = "estado", nullable = false)
-        @Builder.Default
-        private Boolean estado = true;
-
-        @ManyToOne(fetch = FetchType.EAGER)
-        @JoinColumn(name = "id_rol", nullable = false)
-        private Rol rol;
-    }
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_proyecto", nullable = false)
+    private Proyecto proyecto;
 }
