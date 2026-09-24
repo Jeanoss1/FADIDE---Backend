@@ -1,0 +1,118 @@
+### Pruebas del modulo de Seguridad (Rol, Usuario, JWT) - SISCO
+### Requiere el backend corriendo en localhost:8080 y la base de datos con el seed inicial
+### (rol ADMIN + rol SUPERVISOR + usuario admin@fadide.com / Admin123.)
+
+@baseUrl = http://localhost:8080
+
+### 1.1 Login con el administrador semilla (credenciales validas)
+# @name loginAdmin
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "correo": "admin@fadide.com",
+  "password": "Admin123."
+}
+
+> {%
+    client.global.set("tokenAdmin", response.body.token);
+    client.test("Login admin devuelve 200 y token", function() {
+        client.assert(response.status === 200, "Se esperaba 200");
+        client.assert(response.body.token, "Debe incluir token JWT");
+    });
+%}
+
+### 1.2 Login con contraseña incorrecta (debe fallar con 401)
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "correo": "admin@fadide.com",
+  "password": "contrasena-incorrecta"
+}
+
+> {%
+    client.test("Login invalido devuelve 401", function() {
+        client.assert(response.status === 401, "Se esperaba 401");
+    });
+%}
+
+### 1.3 Listar roles SIN token (debe rechazar el acceso)
+GET {{baseUrl}}/api/roles
+
+> {%
+    client.test("Sin token se rechaza el acceso", function() {
+        client.assert(response.status === 401 || response.status === 403, "Se esperaba 401 o 403");
+    });
+%}
+
+### 1.4 Listar roles autenticado como ADMIN (confirma los roles existentes: ADMIN, SUPERVISOR)
+GET {{baseUrl}}/api/roles
+Authorization: Bearer {{tokenAdmin}}
+
+> {%
+    client.test("Lista de roles con token admin", function() {
+        client.assert(response.status === 200, "Se esperaba 200");
+        client.assert(Array.isArray(response.body), "La respuesta debe ser una lista");
+        client.assert(response.body.length >= 2, "Deben existir al menos los roles ADMIN y SUPERVISOR");
+    });
+%}
+
+### 2.1 Crear un usuario con rol SUPERVISOR (solo administrador puede crear usuarios)
+### Nota: ajustar "idRol" al ID real que devolvio el bloque 1.4 si no coincide con 2
+# @name crearUsuario
+POST {{baseUrl}}/api/usuarios
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+  "nombreCompleto": "Juan Perez Supervisor",
+  "correo": "supervisor@fadide.com",
+  "documento": "12345678",
+  "password": "Supervisor123.",
+  "idRol": 2
+}
+
+> {%
+    client.test("Crear usuario devuelve 201", function() {
+        client.assert(response.status === 201, "Se esperaba 201");
+    });
+%}
+
+### 2.2 Listar usuarios autenticado como ADMIN
+GET {{baseUrl}}/api/usuarios
+Authorization: Bearer {{tokenAdmin}}
+
+> {%
+    client.test("Lista de usuarios con token admin", function() {
+        client.assert(response.status === 200, "Se esperaba 200");
+        client.assert(Array.isArray(response.body), "La respuesta debe ser una lista");
+    });
+%}
+
+### 2.3 Login con el usuario recien creado (NO administrador), para obtener su token
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "correo": "supervisor@fadide.com",
+  "password": "Supervisor123."
+}
+
+> {%
+    client.global.set("tokenSupervisor", response.body.token);
+    client.test("Login supervisor devuelve 200 y token", function() {
+        client.assert(response.status === 200, "Se esperaba 200");
+        client.assert(response.body.token, "Debe incluir token JWT");
+    });
+%}
+
+### 2.4 Probar bloqueo de permisos: un usuario sin rol ADMIN NO puede listar usuarios
+GET {{baseUrl}}/api/usuarios
+Authorization: Bearer {{tokenSupervisor}}
+
+> {%
+    client.test("Usuario sin rol ADMIN recibe 403", function() {
+        client.assert(response.status === 403, "Se esperaba 403 (prohibido)");
+    });
+%}
