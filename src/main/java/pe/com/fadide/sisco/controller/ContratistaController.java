@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -39,17 +40,20 @@ public class ContratistaController {
         return ResponseEntity.ok(contratistaService.obtener(id));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR')")
     @PostMapping
     public ResponseEntity<ContratistaResponse> crear(@Valid @RequestBody ContratistaRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(contratistaService.crear(request));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR')")
     @PutMapping("/{id}")
     public ResponseEntity<ContratistaResponse> actualizar(@PathVariable Long id,
                                                           @Valid @RequestBody ContratistaRequest request) {
         return ResponseEntity.ok(contratistaService.actualizar(id, request));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         contratistaService.eliminar(id);

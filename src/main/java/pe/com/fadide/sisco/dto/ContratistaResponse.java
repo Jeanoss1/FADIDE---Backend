@@ -12,7 +12,7 @@ public record ContratistaResponse(
     public static ContratistaResponse from(Contratista contratista) {
         return new ContratistaResponse(
                 contratista.getIdContratista(),
-                contratista.getRazonSocial(),
+                contratista.getNombre(),
                 contratista.getRuc()
         );
     }

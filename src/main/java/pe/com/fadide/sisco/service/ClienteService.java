@@ -37,13 +37,12 @@ public class ClienteService {
 
     @Transactional
     public ClienteResponse crear(ClienteRequest request) {
-        if (clienteRepository.existsByNumeroDocumento(request.ruc())) {
+        if (clienteRepository.existsByRuc(request.ruc())) {
             throw new ConflictException("Ya existe un cliente con el RUC " + request.ruc());
         }
         Cliente cliente = Cliente.builder()
-                .nombreORazonSocial(request.razonSocial().trim())
-                .tipoDocumento("RUC")
-                .numeroDocumento(request.ruc())
+                .razonSocial(request.razonSocial().trim())
+                .ruc(request.ruc())
                 .direccion(request.direccion())
                 .telefono(request.telefono())
                 .build();
@@ -53,11 +52,11 @@ public class ClienteService {
     @Transactional
     public ClienteResponse actualizar(Long id, ClienteRequest request) {
         Cliente cliente = buscar(id);
-        if (clienteRepository.existsByNumeroDocumentoAndIdClienteNot(request.ruc(), id)) {
+        if (clienteRepository.existsByRucAndIdClienteNot(request.ruc(), id)) {
             throw new ConflictException("Ya existe un cliente con el RUC " + request.ruc());
         }
-        cliente.setNombreORazonSocial(request.razonSocial().trim());
-        cliente.setNumeroDocumento(request.ruc());
+        cliente.setRazonSocial(request.razonSocial().trim());
+        cliente.setRuc(request.ruc());
         cliente.setDireccion(request.direccion());
         cliente.setTelefono(request.telefono());
         return ClienteResponse.from(clienteRepository.save(cliente));

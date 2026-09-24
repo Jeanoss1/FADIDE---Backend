@@ -41,7 +41,7 @@ public class ContratistaService {
             throw new ConflictException("Ya existe un contratista con el RUC " + request.ruc());
         }
         Contratista contratista = Contratista.builder()
-                .razonSocial(request.nombre().trim())
+                .nombre(request.nombre().trim())
                 .ruc(request.ruc())
                 .build();
         return ContratistaResponse.from(contratistaRepository.save(contratista));
@@ -53,7 +53,7 @@ public class ContratistaService {
         if (contratistaRepository.existsByRucAndIdContratistaNot(request.ruc(), id)) {
             throw new ConflictException("Ya existe un contratista con el RUC " + request.ruc());
         }
-        contratista.setRazonSocial(request.nombre().trim());
+        contratista.setNombre(request.nombre().trim());
         contratista.setRuc(request.ruc());
         return ContratistaResponse.from(contratistaRepository.save(contratista));
     }

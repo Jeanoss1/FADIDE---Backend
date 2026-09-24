@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -39,17 +40,20 @@ public class EvidenciaController {
         return ResponseEntity.ok(evidenciaService.obtener(id));
     }
 
+    @PreAuthorize("hasRole('SUPERVISOR')")
     @PostMapping
     public ResponseEntity<EvidenciaResponse> crear(@Valid @RequestBody EvidenciaRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(evidenciaService.crear(request));
     }
 
+    @PreAuthorize("hasRole('SUPERVISOR')")
     @PutMapping("/{id}")
     public ResponseEntity<EvidenciaResponse> actualizar(@PathVariable Long id,
                                                         @Valid @RequestBody EvidenciaRequest request) {
         return ResponseEntity.ok(evidenciaService.actualizar(id, request));
     }
 
+    @PreAuthorize("hasRole('SUPERVISOR')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         evidenciaService.eliminar(id);

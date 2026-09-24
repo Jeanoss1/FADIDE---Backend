@@ -56,10 +56,12 @@ Authorization: Bearer {{tokenAdmin}}
         client.assert(Array.isArray(response.body), "La respuesta debe ser una lista");
         client.assert(response.body.length >= 2, "Deben existir al menos los roles ADMIN y SUPERVISOR");
     });
+    const supervisor = response.body.find(function(r) { return r.nombre === "SUPERVISOR"; });
+    client.global.set("idRolSupervisor", supervisor.idRol);
 %}
 
 ### 2.1 Crear un usuario con rol SUPERVISOR (solo administrador puede crear usuarios)
-### Nota: ajustar "idRol" al ID real que devolvio el bloque 1.4 si no coincide con 2
+### El ID del rol SUPERVISOR se toma del bloque 1.4 (no se asume un numero fijo)
 # @name crearUsuario
 POST {{baseUrl}}/api/usuarios
 Content-Type: application/json
@@ -70,7 +72,7 @@ Authorization: Bearer {{tokenAdmin}}
   "correo": "supervisor@fadide.com",
   "documento": "12345678",
   "password": "Supervisor123.",
-  "idRol": 2
+  "idRol": {{idRolSupervisor}}
 }
 
 > {%
@@ -114,5 +116,163 @@ Authorization: Bearer {{tokenSupervisor}}
 > {%
     client.test("Usuario sin rol ADMIN recibe 403", function() {
         client.assert(response.status === 403, "Se esperaba 403 (prohibido)");
+    });
+%}
+
+### ===================================================================
+### 3. Pruebas de Cliente y Contratista (control de acceso por roles)
+### Requiere haber ejecutado antes los bloques 1 y 2 (tokenAdmin y tokenSupervisor).
+### Los RUC se generan al azar para que el bloque se pueda repetir sin choques.
+### ===================================================================
+
+### 3.0 Obtener el ID real del rol GESTOR (los IDs dependen del orden en que se sembraron los roles)
+GET {{baseUrl}}/api/roles
+Authorization: Bearer {{tokenAdmin}}
+
+> {%
+    const gestor = response.body.find(function(r) { return r.nombre === "GESTOR"; });
+    client.test("Existe el rol GESTOR", function() {
+        client.assert(response.status === 200, "Se esperaba 200");
+        client.assert(gestor, "No se encontro el rol GESTOR");
+    });
+    client.global.set("idRolGestor", gestor.idRol);
+%}
+
+### 3.1 Crear cliente como ADMIN (debe devolver 201)
+POST {{baseUrl}}/api/clientes
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+  "razonSocial": "Constructora Andina S.A.C.",
+  "ruc": "20{{$random.integer(100000000, 999999999)}}",
+  "direccion": "Av. Arequipa 1234, Lima",
+  "telefono": "987654321"
+}
+
+> {%
+    client.global.set("rucCliente", response.body.ruc);
+    client.test("ADMIN crea cliente y recibe 201", function() {
+        client.assert(response.status === 201, "Se esperaba 201");
+        client.assert(response.body.idCliente, "Debe devolver el idCliente");
+    });
+%}
+
+### 3.2 Crear cliente con el mismo RUC (debe devolver 409 por RUC duplicado)
+POST {{baseUrl}}/api/clientes
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+  "razonSocial": "Otra Empresa S.A.C.",
+  "ruc": "{{rucCliente}}",
+  "direccion": "Jr. Puno 456, Lima",
+  "telefono": "912345678"
+}
+
+> {%
+    client.test("RUC duplicado devuelve 409", function() {
+        client.assert(response.status === 409, "Se esperaba 409 (ConflictException)");
+    });
+%}
+
+### 3.3 Crear contratista como ADMIN (debe devolver 201)
+POST {{baseUrl}}/api/contratistas
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+  "nombre": "Servicios Generales del Sur E.I.R.L.",
+  "ruc": "20{{$random.integer(100000000, 999999999)}}"
+}
+
+> {%
+    client.test("ADMIN crea contratista y recibe 201", function() {
+        client.assert(response.status === 201, "Se esperaba 201");
+        client.assert(response.body.idContratista, "Debe devolver el idContratista");
+    });
+%}
+
+### 3.4 Crear un usuario con rol GESTOR (solo ADMIN puede crear usuarios)
+### Si el usuario ya existe de una ejecucion anterior, se acepta 409 y se sigue con el login
+POST {{baseUrl}}/api/usuarios
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+  "nombreCompleto": "Maria Lopez Gestora",
+  "correo": "gestor@fadide.com",
+  "documento": "87654321",
+  "password": "Gestor123.",
+  "idRol": {{idRolGestor}}
+}
+
+> {%
+    client.test("Crear usuario GESTOR devuelve 201 (o 409 si ya existia)", function() {
+        client.assert(response.status === 201 || response.status === 409, "Se esperaba 201 o 409");
+    });
+%}
+
+### 3.5 Login con el usuario GESTOR para obtener su token
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "correo": "gestor@fadide.com",
+  "password": "Gestor123."
+}
+
+> {%
+    client.global.set("tokenGestor", response.body.token);
+    client.test("Login gestor devuelve 200 y token", function() {
+        client.assert(response.status === 200, "Se esperaba 200");
+        client.assert(response.body.token, "Debe incluir token JWT");
+    });
+%}
+
+### 3.6 Crear cliente como GESTOR (debe devolver 201)
+POST {{baseUrl}}/api/clientes
+Content-Type: application/json
+Authorization: Bearer {{tokenGestor}}
+
+{
+  "razonSocial": "Inmobiliaria Los Pinos S.A.",
+  "ruc": "20{{$random.integer(100000000, 999999999)}}",
+  "direccion": "Calle Las Flores 789, Arequipa",
+  "telefono": "956789123"
+}
+
+> {%
+    client.test("GESTOR crea cliente y recibe 201", function() {
+        client.assert(response.status === 201, "Se esperaba 201");
+    });
+%}
+
+### 3.7 Crear cliente como SUPERVISOR (debe devolver 403: no tiene permiso para crear)
+POST {{baseUrl}}/api/clientes
+Content-Type: application/json
+Authorization: Bearer {{tokenSupervisor}}
+
+{
+  "razonSocial": "Empresa No Autorizada S.A.C.",
+  "ruc": "20{{$random.integer(100000000, 999999999)}}",
+  "direccion": "Av. Brasil 321, Lima",
+  "telefono": "923456789"
+}
+
+> {%
+    client.test("SUPERVISOR no puede crear clientes (403)", function() {
+        client.assert(response.status === 403, "Se esperaba 403 (prohibido)");
+    });
+%}
+
+### 3.8 Listar clientes como SUPERVISOR (debe devolver 200: la consulta esta permitida)
+GET {{baseUrl}}/api/clientes
+Authorization: Bearer {{tokenSupervisor}}
+
+> {%
+    client.test("SUPERVISOR puede consultar clientes (200)", function() {
+        client.assert(response.status === 200, "Se esperaba 200");
+        client.assert(Array.isArray(response.body), "La respuesta debe ser una lista");
     });
 %}

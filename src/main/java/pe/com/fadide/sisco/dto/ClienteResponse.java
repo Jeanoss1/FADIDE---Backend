@@ -14,8 +14,8 @@ public record ClienteResponse(
     public static ClienteResponse from(Cliente cliente) {
         return new ClienteResponse(
                 cliente.getIdCliente(),
-                cliente.getNombreORazonSocial(),
-                cliente.getNumeroDocumento(),
+                cliente.getRazonSocial(),
+                cliente.getRuc(),
                 cliente.getDireccion(),
                 cliente.getTelefono()
         );

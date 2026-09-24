@@ -13,10 +13,10 @@ import pe.com.fadide.sisco.model.Cliente;
 @Repository
 public interface ClienteRepository extends JpaRepository<Cliente, Long> {
 
-    boolean existsByNumeroDocumento(String numeroDocumento);
+    boolean existsByRuc(String ruc);
 
-    boolean existsByNumeroDocumentoAndIdClienteNot(String numeroDocumento, Long idCliente);
+    boolean existsByRucAndIdClienteNot(String ruc, Long idCliente);
 
-    @Query("select c from Cliente c where lower(c.nombreORazonSocial) like lower(concat('%', :texto, '%')) order by c.nombreORazonSocial")
+    @Query("select c from Cliente c where lower(c.razonSocial) like lower(concat('%', :texto, '%')) order by c.razonSocial")
     List<Cliente> buscarPorRazonSocial(@Param("texto") String texto);
 }

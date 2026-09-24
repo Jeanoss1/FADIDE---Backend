@@ -17,6 +17,6 @@ public interface ContratistaRepository extends JpaRepository<Contratista, Long> 
 
     boolean existsByRucAndIdContratistaNot(String ruc, Long idContratista);
 
-    @Query("select c from Contratista c where lower(c.razonSocial) like lower(concat('%', :texto, '%')) order by c.razonSocial")
+    @Query("select c from Contratista c where lower(c.nombre) like lower(concat('%', :texto, '%')) order by c.nombre")
     List<Contratista> buscarPorNombre(@Param("texto") String texto);
 }
