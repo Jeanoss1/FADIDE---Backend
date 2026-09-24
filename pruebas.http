@@ -62,6 +62,7 @@ Authorization: Bearer {{tokenAdmin}}
 
 ### 2.1 Crear un usuario con rol SUPERVISOR (solo administrador puede crear usuarios)
 ### El ID del rol SUPERVISOR se toma del bloque 1.4 (no se asume un numero fijo)
+### Si el usuario ya existe de una ejecucion anterior, se acepta 409 y se sigue con el login
 # @name crearUsuario
 POST {{baseUrl}}/api/usuarios
 Content-Type: application/json
@@ -76,8 +77,8 @@ Authorization: Bearer {{tokenAdmin}}
 }
 
 > {%
-    client.test("Crear usuario devuelve 201", function() {
-        client.assert(response.status === 201, "Se esperaba 201");
+    client.test("Crear usuario devuelve 201 (o 409 si ya existia)", function() {
+        client.assert(response.status === 201 || response.status === 409, "Se esperaba 201 o 409");
     });
 %}
 
@@ -116,6 +117,67 @@ Authorization: Bearer {{tokenSupervisor}}
 > {%
     client.test("Usuario sin rol ADMIN recibe 403", function() {
         client.assert(response.status === 403, "Se esperaba 403 (prohibido)");
+    });
+%}
+
+### 2.5 Crear usuario con un correo ya registrado (debe devolver 409: el correo es unico)
+POST {{baseUrl}}/api/usuarios
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+  "nombreCompleto": "Otro Usuario",
+  "correo": "supervisor@fadide.com",
+  "documento": "11223344",
+  "password": "Otro12345.",
+  "idRol": {{idRolSupervisor}}
+}
+
+> {%
+    client.test("Correo repetido devuelve 409", function() {
+        client.assert(response.status === 409, "Se esperaba 409 (conflicto)");
+    });
+%}
+
+### 2.6 Crear usuario con datos invalidos (debe devolver 400 con el detalle de cada campo)
+POST {{baseUrl}}/api/usuarios
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+  "nombreCompleto": "",
+  "correo": "correo-sin-formato",
+  "documento": "12ab",
+  "password": "123",
+  "idRol": null
+}
+
+> {%
+    client.test("Datos invalidos devuelven 400 con errores por campo", function() {
+        client.assert(response.status === 400, "Se esperaba 400");
+        var errores = response.body.errores;
+        client.assert(errores.nombreCompleto, "Debe informar el error de nombreCompleto");
+        client.assert(errores.correo, "Debe informar el error de correo");
+        client.assert(errores.documento, "Debe informar el error de documento");
+        client.assert(errores.password, "Debe informar el error de password");
+        client.assert(errores.idRol, "Debe informar el error de idRol");
+    });
+%}
+
+### 2.7 Login con datos invalidos (debe devolver 400, sin llegar a consultar la base de datos)
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "correo": "no-es-un-correo",
+  "password": ""
+}
+
+> {%
+    client.test("Login con datos invalidos devuelve 400", function() {
+        client.assert(response.status === 400, "Se esperaba 400");
+        client.assert(response.body.errores.correo, "Debe informar el error de correo");
+        client.assert(response.body.errores.password, "Debe informar el error de password");
     });
 %}
 

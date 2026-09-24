@@ -14,7 +14,7 @@ import pe.com.fadide.sisco.model.Supervision;
 @Repository
 public interface SupervisionRepository extends JpaRepository<Supervision, Long> {
 
-    @Query("select s from Supervision s order by s.fecha desc")
+    @Query("select s from Supervision s order by s.fechaRegistro desc")
     List<Supervision> listarTodas();
 
     @Query("select count(s) > 0 from Supervision s where s.contrato.idContrato = :idContrato")
