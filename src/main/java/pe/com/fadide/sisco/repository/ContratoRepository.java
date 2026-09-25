@@ -9,4 +9,6 @@ public interface ContratoRepository extends JpaRepository<Contrato, Long> {
 
     @Query("select count(c) > 0 from Contrato c where c.proyecto.idProyecto = :idProyecto")
     boolean existsByProyectoId(@Param("idProyecto") Long idProyecto);
+
+    boolean existsByNumeroContrato(String numeroContrato);
 }
