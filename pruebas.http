@@ -181,6 +181,26 @@ Content-Type: application/json
     });
 %}
 
+### 2.8 Un usuario SUPERVISOR intenta eliminar un rol (debe devolver 403: solo ADMIN elimina roles)
+DELETE {{baseUrl}}/api/roles/{{idRolSupervisor}}
+Authorization: Bearer {{tokenSupervisor}}
+
+> {%
+    client.test("SUPERVISOR no puede eliminar roles (403)", function() {
+        client.assert(response.status === 403, "Se esperaba 403 (prohibido)");
+    });
+%}
+
+### 2.9 ADMIN intenta eliminar un rol que tiene usuarios asignados (debe devolver 409)
+DELETE {{baseUrl}}/api/roles/{{idRolSupervisor}}
+Authorization: Bearer {{tokenAdmin}}
+
+> {%
+    client.test("No se elimina un rol con usuarios (409)", function() {
+        client.assert(response.status === 409, "Se esperaba 409 (conflicto)");
+    });
+%}
+
 ### ===================================================================
 ### 3. Pruebas de Cliente y Contratista (control de acceso por roles)
 ### Requiere haber ejecutado antes los bloques 1 y 2 (tokenAdmin y tokenSupervisor).
@@ -336,5 +356,373 @@ Authorization: Bearer {{tokenSupervisor}}
     client.test("SUPERVISOR puede consultar clientes (200)", function() {
         client.assert(response.status === 200, "Se esperaba 200");
         client.assert(Array.isArray(response.body), "La respuesta debe ser una lista");
+    });
+%}
+
+### ===================================================================
+### 5. Pruebas del modulo Contratos (Contrato y Pago)
+### Requiere haber ejecutado antes los bloques 1 y 2 (tokenAdmin y tokenSupervisor).
+### El bloque crea su propio cliente y proyecto para no depender de IDs fijos.
+### ===================================================================
+
+### 5.0 Crear un cliente para el proyecto del contrato
+POST {{baseUrl}}/api/clientes
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+  "razonSocial": "Cliente Contratos S.A.C.",
+  "ruc": "20{{$random.integer(100000000, 999999999)}}",
+  "direccion": "Av. Javier Prado 500, Lima",
+  "telefono": "987111222"
+}
+
+> {%
+    client.global.set("idClienteContrato", response.body.idCliente);
+    client.test("Cliente para contratos creado (201)", function() {
+        client.assert(response.status === 201, "Se esperaba 201");
+    });
+%}
+
+### 5.1 Crear un proyecto para asociar los contratos
+POST {{baseUrl}}/api/proyectos
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+  "nombre": "Edificio Multifamiliar Los Olivos",
+  "ubicacion": "Los Olivos, Lima",
+  "idCliente": {{idClienteContrato}}
+}
+
+> {%
+    client.global.set("idProyectoContrato", response.body.idProyecto);
+    client.test("Proyecto para contratos creado (201)", function() {
+        client.assert(response.status === 201, "Se esperaba 201");
+        client.assert(response.body.idProyecto, "Debe devolver el idProyecto");
+    });
+%}
+
+### 5.2 Crear contrato valido (monto total 100000; si no se envia estado queda VIGENTE)
+POST {{baseUrl}}/api/contratos
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+  "numeroContrato": "CT-{{$random.integer(100000, 999999)}}",
+  "fechaInicio": "2026-01-15",
+  "fechaFin": "2026-12-15",
+  "montoTotal": 100000.00,
+  "idProyecto": {{idProyectoContrato}}
+}
+
+> {%
+    client.global.set("idContrato", response.body.idContrato);
+    client.global.set("numeroContrato", response.body.numeroContrato);
+    client.test("Crear contrato devuelve 201 con estado VIGENTE", function() {
+        client.assert(response.status === 201, "Se esperaba 201");
+        client.assert(response.body.idContrato, "Debe devolver el idContrato");
+        client.assert(response.body.estado === "VIGENTE", "El estado por defecto debe ser VIGENTE");
+    });
+%}
+
+### 5.3 Crear contrato con fecha de fin anterior a la de inicio (debe devolver 400)
+POST {{baseUrl}}/api/contratos
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+  "numeroContrato": "CT-{{$random.integer(100000, 999999)}}",
+  "fechaInicio": "2026-12-15",
+  "fechaFin": "2026-01-15",
+  "montoTotal": 50000.00,
+  "idProyecto": {{idProyectoContrato}}
+}
+
+> {%
+    client.test("Fechas invertidas devuelven 400", function() {
+        client.assert(response.status === 400, "Se esperaba 400");
+    });
+%}
+
+### 5.4 Crear contrato con un proyecto inexistente (debe devolver 404)
+POST {{baseUrl}}/api/contratos
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+  "numeroContrato": "CT-{{$random.integer(100000, 999999)}}",
+  "fechaInicio": "2026-01-15",
+  "fechaFin": "2026-12-15",
+  "montoTotal": 50000.00,
+  "idProyecto": 999999999
+}
+
+> {%
+    client.test("Proyecto inexistente devuelve 404", function() {
+        client.assert(response.status === 404, "Se esperaba 404");
+    });
+%}
+
+### 5.5 Listar contratos
+GET {{baseUrl}}/api/contratos
+Authorization: Bearer {{tokenAdmin}}
+
+> {%
+    client.test("Lista de contratos (200)", function() {
+        client.assert(response.status === 200, "Se esperaba 200");
+        client.assert(Array.isArray(response.body), "La respuesta debe ser una lista");
+    });
+%}
+
+### 5.6 Obtener el contrato creado por su ID
+GET {{baseUrl}}/api/contratos/{{idContrato}}
+Authorization: Bearer {{tokenAdmin}}
+
+> {%
+    client.test("Obtener contrato por ID (200)", function() {
+        client.assert(response.status === 200, "Se esperaba 200");
+        client.assert(response.body.idContrato == client.global.get("idContrato"), "Debe devolver el mismo contrato");
+    });
+%}
+
+### 5.7 Obtener un contrato inexistente (debe devolver 404)
+GET {{baseUrl}}/api/contratos/999999999
+Authorization: Bearer {{tokenAdmin}}
+
+> {%
+    client.test("Contrato inexistente devuelve 404", function() {
+        client.assert(response.status === 404, "Se esperaba 404");
+    });
+%}
+
+### 5.8 Listar contratos SIN token (debe rechazar el acceso)
+GET {{baseUrl}}/api/contratos
+
+> {%
+    client.test("Sin token se rechaza el acceso", function() {
+        client.assert(response.status === 401 || response.status === 403, "Se esperaba 401 o 403");
+    });
+%}
+
+### ===================================================================
+### 5 (continuacion). Pruebas de Pago
+### Requiere haber ejecutado antes las pruebas 5.0 a 5.8 (idContrato con monto total 100000).
+### ===================================================================
+
+### 5.11 Registrar un pago de 60000 sobre el contrato (debe devolver 201, estado REGISTRADO)
+POST {{baseUrl}}/api/pagos
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+  "monto": 60000.00,
+  "fechaPago": "2026-03-01",
+  "idContrato": {{idContrato}}
+}
+
+> {%
+    client.global.set("idPago", response.body.idPago);
+    client.test("Crear pago devuelve 201 con valores por defecto", function() {
+        client.assert(response.status === 201, "Se esperaba 201");
+        client.assert(response.body.idPago, "Debe devolver el idPago");
+        client.assert(response.body.estado === "REGISTRADO", "El estado por defecto debe ser REGISTRADO");
+        client.assert(response.body.conformidadEmitida === false, "conformidadEmitida por defecto debe ser false");
+    });
+%}
+
+### 5.12 Registrar un pago que excede el monto del contrato (60000 + 50000 > 100000, debe devolver 409)
+POST {{baseUrl}}/api/pagos
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+  "monto": 50000.00,
+  "fechaPago": "2026-04-01",
+  "idContrato": {{idContrato}}
+}
+
+> {%
+    client.test("Pago que excede el monto total devuelve 409", function() {
+        client.assert(response.status === 409, "Se esperaba 409 (conflicto)");
+    });
+%}
+
+### 5.13 Registrar un pago que completa exactamente el monto del contrato (60000 + 40000 = 100000, debe devolver 201)
+POST {{baseUrl}}/api/pagos
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+  "monto": 40000.00,
+  "fechaPago": "2026-05-01",
+  "estado": "PAGADO",
+  "conformidadEmitida": true,
+  "idContrato": {{idContrato}}
+}
+
+> {%
+    client.test("Pago que llega justo al monto total se acepta (201)", function() {
+        client.assert(response.status === 201, "Se esperaba 201");
+        client.assert(response.body.estado === "PAGADO", "Debe respetar el estado enviado");
+    });
+%}
+
+### 5.14 Registrar un pago sobre un contrato inexistente (debe devolver 404)
+POST {{baseUrl}}/api/pagos
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+  "monto": 1000.00,
+  "fechaPago": "2026-03-01",
+  "idContrato": 999999999
+}
+
+> {%
+    client.test("Contrato inexistente devuelve 404", function() {
+        client.assert(response.status === 404, "Se esperaba 404");
+    });
+%}
+
+### 5.15 Listar pagos
+GET {{baseUrl}}/api/pagos
+Authorization: Bearer {{tokenAdmin}}
+
+> {%
+    client.test("Lista de pagos (200)", function() {
+        client.assert(response.status === 200, "Se esperaba 200");
+        client.assert(Array.isArray(response.body), "La respuesta debe ser una lista");
+    });
+%}
+
+### 5.16 Obtener el pago creado por su ID
+GET {{baseUrl}}/api/pagos/{{idPago}}
+Authorization: Bearer {{tokenAdmin}}
+
+> {%
+    client.test("Obtener pago por ID (200)", function() {
+        client.assert(response.status === 200, "Se esperaba 200");
+        client.assert(response.body.idContrato == client.global.get("idContrato"), "Debe pertenecer al contrato creado");
+    });
+%}
+
+### 5.17 Obtener un pago inexistente (debe devolver 404)
+GET {{baseUrl}}/api/pagos/999999999
+Authorization: Bearer {{tokenAdmin}}
+
+> {%
+    client.test("Pago inexistente devuelve 404", function() {
+        client.assert(response.status === 404, "Se esperaba 404");
+    });
+%}
+
+### 5.18 Eliminar un contrato que tiene pagos (debe devolver 409)
+DELETE {{baseUrl}}/api/contratos/{{idContrato}}
+Authorization: Bearer {{tokenAdmin}}
+
+> {%
+    client.test("No se elimina un contrato con pagos (409)", function() {
+        client.assert(response.status === 409, "Se esperaba 409 (conflicto)");
+    });
+%}
+
+### 5.19 Crear un contrato sin pagos para probar la eliminacion
+POST {{baseUrl}}/api/contratos
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+  "numeroContrato": "CT-{{$random.integer(100000, 999999)}}",
+  "fechaInicio": "2026-02-01",
+  "fechaFin": "2026-06-30",
+  "montoTotal": 20000.00,
+  "idProyecto": {{idProyectoContrato}}
+}
+
+> {%
+    client.global.set("idContratoSinPagos", response.body.idContrato);
+    client.test("Contrato sin pagos creado (201)", function() {
+        client.assert(response.status === 201, "Se esperaba 201");
+    });
+%}
+
+### 5.20 Eliminar el contrato sin pagos (debe devolver 204)
+DELETE {{baseUrl}}/api/contratos/{{idContratoSinPagos}}
+Authorization: Bearer {{tokenAdmin}}
+
+> {%
+    client.test("Contrato sin pagos se elimina (204)", function() {
+        client.assert(response.status === 204, "Se esperaba 204");
+    });
+%}
+
+### 5.21 Un usuario SUPERVISOR intenta registrar un pago (debe devolver 403: solo ADMIN y GESTOR)
+POST {{baseUrl}}/api/pagos
+Content-Type: application/json
+Authorization: Bearer {{tokenSupervisor}}
+
+{
+  "monto": 100.00,
+  "fechaPago": "2026-05-15",
+  "idContrato": {{idContrato}}
+}
+
+> {%
+    client.test("SUPERVISOR no puede registrar pagos (403)", function() {
+        client.assert(response.status === 403, "Se esperaba 403 (prohibido)");
+    });
+%}
+
+### 5.22 Registrar un pago con monto negativo (debe devolver 400 con el error del campo monto)
+POST {{baseUrl}}/api/pagos
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+  "monto": -300.00,
+  "fechaPago": "2026-05-15",
+  "idContrato": {{idContrato}}
+}
+
+> {%
+    client.test("Pago negativo devuelve 400", function() {
+        client.assert(response.status === 400, "Se esperaba 400");
+        client.assert(response.body.errores.monto, "Debe informar el error del campo monto");
+    });
+%}
+
+### 5.23 Crear un contrato con un numero de contrato ya registrado (debe devolver 409)
+POST {{baseUrl}}/api/contratos
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{
+  "numeroContrato": "{{numeroContrato}}",
+  "fechaInicio": "2026-01-15",
+  "fechaFin": "2026-12-15",
+  "montoTotal": 5000.00,
+  "idProyecto": {{idProyectoContrato}}
+}
+
+> {%
+    client.test("Numero de contrato duplicado devuelve 409", function() {
+        client.assert(response.status === 409, "Se esperaba 409 (conflicto)");
+    });
+%}
+
+### 5.24 Crear un contrato sin datos obligatorios (debe devolver 400 con el error de cada campo)
+POST {{baseUrl}}/api/contratos
+Content-Type: application/json
+Authorization: Bearer {{tokenAdmin}}
+
+{}
+
+> {%
+    client.test("Contrato sin datos devuelve 400 con errores por campo", function() {
+        client.assert(response.status === 400, "Se esperaba 400");
+        var e = response.body.errores;
+        client.assert(e.numeroContrato && e.fechaInicio && e.fechaFin && e.montoTotal && e.idProyecto,
+            "Debe informar los cinco campos obligatorios");
     });
 %}
