@@ -1,8 +1,10 @@
 package pe.com.fadide.sisco.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import pe.com.fadide.sisco.dto.PenalidadRequestDTO;
 import pe.com.fadide.sisco.dto.PenalidadResponseDTO;
@@ -27,8 +29,9 @@ public class PenalidadController {
         return ResponseEntity.ok(penalidadService.findById(id));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR')")
     @PostMapping
-    public ResponseEntity<PenalidadResponseDTO> create(@RequestBody PenalidadRequestDTO dto) {
+    public ResponseEntity<PenalidadResponseDTO> create(@Valid @RequestBody PenalidadRequestDTO dto) {
         return new ResponseEntity<>(penalidadService.create(dto), HttpStatus.CREATED);
     }
 }

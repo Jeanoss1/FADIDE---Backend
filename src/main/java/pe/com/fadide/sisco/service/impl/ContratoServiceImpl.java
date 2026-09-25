@@ -12,6 +12,7 @@ import pe.com.fadide.sisco.repository.ContratoRepository;
 import pe.com.fadide.sisco.repository.PagoRepository;
 import pe.com.fadide.sisco.repository.PenalidadRepository;
 import pe.com.fadide.sisco.repository.ProyectoRepository;
+import pe.com.fadide.sisco.repository.SupervisionRepository;
 import pe.com.fadide.sisco.service.ContratoService;
 
 import java.util.List;
@@ -24,6 +25,7 @@ public class ContratoServiceImpl implements ContratoService {
     private final ProyectoRepository proyectoRepository;
     private final PagoRepository pagoRepository;
     private final PenalidadRepository penalidadRepository;
+    private final SupervisionRepository supervisionRepository;
 
     @Override
     public List<ContratoResponseDTO> findAll() {
@@ -43,6 +45,12 @@ public class ContratoServiceImpl implements ContratoService {
         if (dto.getFechaFin().isBefore(dto.getFechaInicio())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "La fecha de fin no puede ser anterior a la fecha de inicio");
+        }
+
+        // Regla: el numero de contrato es unico
+        if (contratoRepository.existsByNumeroContrato(dto.getNumeroContrato())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Ya existe un contrato con el numero: " + dto.getNumeroContrato());
         }
 
         Proyecto proyecto = proyectoRepository.findById(dto.getIdProyecto())
@@ -74,6 +82,11 @@ public class ContratoServiceImpl implements ContratoService {
         if (penalidadRepository.existsByContrato_IdContrato(id)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "No se puede eliminar: el contrato tiene penalidades registradas");
+        }
+        // Regla: no se puede eliminar un contrato con una supervision asociada
+        if (supervisionRepository.existsByContratoId(id)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "No se puede eliminar: el contrato tiene una supervision registrada");
         }
 
         contratoRepository.delete(contrato);
