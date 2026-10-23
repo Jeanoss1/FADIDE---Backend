@@ -2,20 +2,14 @@ package pe.com.fadide.sisco.controller;
 
 import java.util.List;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import jakarta.validation.Valid;
+import pe.com.fadide.sisco.common.controller.CrudController;
+import pe.com.fadide.sisco.common.service.CrudService;
 import pe.com.fadide.sisco.dto.ProyectoRequest;
 import pe.com.fadide.sisco.dto.ProyectoResponse;
 import pe.com.fadide.sisco.model.EstadoProyecto;
@@ -23,7 +17,7 @@ import pe.com.fadide.sisco.service.ProyectoService;
 
 @RestController
 @RequestMapping("/api/proyectos")
-public class ProyectoController {
+public class ProyectoController extends CrudController<ProyectoRequest, ProyectoResponse, Long> {
 
     private final ProyectoService proyectoService;
 
@@ -31,34 +25,31 @@ public class ProyectoController {
         this.proyectoService = proyectoService;
     }
 
-    @GetMapping
-    public ResponseEntity<List<ProyectoResponse>> listar(@RequestParam(required = false) EstadoProyecto estado,
-                                                         @RequestParam(required = false) Long idCliente) {
+    // GET /api/proyectos?estado=...[&idCliente=...] (sin filtros responde el GET genérico)
+    @GetMapping(params = "estado")
+    public ResponseEntity<List<ProyectoResponse>> listarPorEstado(@RequestParam(required = false) EstadoProyecto estado,
+                                                                  @RequestParam(required = false) Long idCliente) {
         return ResponseEntity.ok(proyectoService.listar(estado, idCliente));
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<ProyectoResponse> obtener(@PathVariable Long id) {
-        return ResponseEntity.ok(proyectoService.obtener(id));
+    // GET /api/proyectos?idCliente=... (sin estado)
+    @GetMapping(params = { "idCliente", "!estado" })
+    public ResponseEntity<List<ProyectoResponse>> listarPorCliente(@RequestParam(required = false) Long idCliente) {
+        return ResponseEntity.ok(proyectoService.listar(null, idCliente));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR')")
-    @PostMapping
-    public ResponseEntity<ProyectoResponse> crear(@Valid @RequestBody ProyectoRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(proyectoService.crear(request));
+    @Override
+    protected CrudService<ProyectoRequest, ProyectoResponse, Long> getService() {
+        return proyectoService;
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR')")
-    @PutMapping("/{id}")
-    public ResponseEntity<ProyectoResponse> actualizar(@PathVariable Long id,
-                                                       @Valid @RequestBody ProyectoRequest request) {
-        return ResponseEntity.ok(proyectoService.actualizar(id, request));
+    @Override
+    protected Long obtenerId(ProyectoResponse response) {
+        return response.idProyecto();
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR')")
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
-        proyectoService.eliminar(id);
-        return ResponseEntity.noContent().build();
+    @Override
+    public String[] rolesEscritura() {
+        return new String[] { "ADMIN", "GESTOR" };
     }
 }

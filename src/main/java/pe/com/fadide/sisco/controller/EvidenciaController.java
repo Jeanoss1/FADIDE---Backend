@@ -2,27 +2,21 @@ package pe.com.fadide.sisco.controller;
 
 import java.util.List;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import jakarta.validation.Valid;
+import pe.com.fadide.sisco.common.controller.CrudController;
+import pe.com.fadide.sisco.common.service.CrudService;
 import pe.com.fadide.sisco.dto.EvidenciaRequest;
 import pe.com.fadide.sisco.dto.EvidenciaResponse;
 import pe.com.fadide.sisco.service.EvidenciaService;
 
 @RestController
 @RequestMapping("/api/evidencias")
-public class EvidenciaController {
+public class EvidenciaController extends CrudController<EvidenciaRequest, EvidenciaResponse, Long> {
 
     private final EvidenciaService evidenciaService;
 
@@ -30,33 +24,25 @@ public class EvidenciaController {
         this.evidenciaService = evidenciaService;
     }
 
-    @GetMapping
-    public ResponseEntity<List<EvidenciaResponse>> listar(@RequestParam(required = false) Long idSupervision) {
+    // GET /api/evidencias?idSupervision=... (sin el parámetro responde el GET genérico)
+    @GetMapping(params = "idSupervision")
+    public ResponseEntity<List<EvidenciaResponse>> listarPorSupervision(
+            @RequestParam(required = false) Long idSupervision) {
         return ResponseEntity.ok(evidenciaService.listar(idSupervision));
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<EvidenciaResponse> obtener(@PathVariable Long id) {
-        return ResponseEntity.ok(evidenciaService.obtener(id));
+    @Override
+    protected CrudService<EvidenciaRequest, EvidenciaResponse, Long> getService() {
+        return evidenciaService;
     }
 
-    @PreAuthorize("hasRole('SUPERVISOR')")
-    @PostMapping
-    public ResponseEntity<EvidenciaResponse> crear(@Valid @RequestBody EvidenciaRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(evidenciaService.crear(request));
+    @Override
+    protected Long obtenerId(EvidenciaResponse response) {
+        return response.idEvidencia();
     }
 
-    @PreAuthorize("hasRole('SUPERVISOR')")
-    @PutMapping("/{id}")
-    public ResponseEntity<EvidenciaResponse> actualizar(@PathVariable Long id,
-                                                        @Valid @RequestBody EvidenciaRequest request) {
-        return ResponseEntity.ok(evidenciaService.actualizar(id, request));
-    }
-
-    @PreAuthorize("hasRole('SUPERVISOR')")
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
-        evidenciaService.eliminar(id);
-        return ResponseEntity.noContent().build();
+    @Override
+    public String[] rolesEscritura() {
+        return new String[] { "SUPERVISOR" };
     }
 }

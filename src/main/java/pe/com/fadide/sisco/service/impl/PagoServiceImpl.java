@@ -1,9 +1,12 @@
 package pe.com.fadide.sisco.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import pe.com.fadide.sisco.common.exception.RecursoNoEncontradoException;
+import pe.com.fadide.sisco.common.service.impl.CrudServiceImpl;
 import pe.com.fadide.sisco.dto.PagoRequestDTO;
 import pe.com.fadide.sisco.dto.PagoResponseDTO;
 import pe.com.fadide.sisco.model.Contrato;
@@ -13,35 +16,28 @@ import pe.com.fadide.sisco.repository.PagoRepository;
 import pe.com.fadide.sisco.service.PagoService;
 
 import java.math.BigDecimal;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class PagoServiceImpl implements PagoService {
+public class PagoServiceImpl extends CrudServiceImpl<Pago, PagoRequestDTO, PagoResponseDTO, Long>
+        implements PagoService {
 
     private final PagoRepository pagoRepository;
     private final ContratoRepository contratoRepository;
 
     @Override
-    public List<PagoResponseDTO> findAll() {
-        return pagoRepository.findAll().stream()
-                .map(this::toResponse)
-                .toList();
+    protected JpaRepository<Pago, Long> getRepository() {
+        return pagoRepository;
     }
 
     @Override
-    public PagoResponseDTO findById(Long id) {
-        Pago pago = pagoRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-                        "Pago no encontrado con ID: " + id));
-        return toResponse(pago);
+    protected String mensajeNoEncontrado(Long id) {
+        return "Pago no encontrado con ID: " + id;
     }
 
     @Override
-    public PagoResponseDTO create(PagoRequestDTO dto) {
-        Contrato contrato = contratoRepository.findById(dto.getIdContrato())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-                        "Contrato no encontrado con ID: " + dto.getIdContrato()));
+    protected Pago toEntity(PagoRequestDTO dto) {
+        Contrato contrato = buscarContrato(dto.getIdContrato());
 
         // Regla: la suma de los pagos no puede superar el monto total del contrato
         BigDecimal pagosPrevios = pagoRepository.findByContrato_IdContrato(contrato.getIdContrato())
@@ -58,18 +54,31 @@ public class PagoServiceImpl implements PagoService {
                             + ", intentado: " + dto.getMonto() + ")");
         }
 
-        Pago pago = Pago.builder()
+        return Pago.builder()
                 .monto(dto.getMonto())
                 .fechaPago(dto.getFechaPago())
                 .estado(dto.getEstado() != null ? dto.getEstado() : "REGISTRADO")
                 .conformidadEmitida(dto.getConformidadEmitida() != null ? dto.getConformidadEmitida() : false)
                 .contrato(contrato)
                 .build();
-
-        return toResponse(pagoRepository.save(pago));
     }
 
-    private PagoResponseDTO toResponse(Pago p) {
+    // El controller no expone PUT (el backend solo registra pagos); se implementa por el contrato genérico
+    @Override
+    protected void actualizarEntidad(Pago pago, PagoRequestDTO dto) {
+        pago.setMonto(dto.getMonto());
+        pago.setFechaPago(dto.getFechaPago());
+        if (dto.getEstado() != null) {
+            pago.setEstado(dto.getEstado());
+        }
+        if (dto.getConformidadEmitida() != null) {
+            pago.setConformidadEmitida(dto.getConformidadEmitida());
+        }
+        pago.setContrato(buscarContrato(dto.getIdContrato()));
+    }
+
+    @Override
+    protected PagoResponseDTO toResponse(Pago p) {
         return PagoResponseDTO.builder()
                 .idPago(p.getIdPago())
                 .monto(p.getMonto())
@@ -78,5 +87,11 @@ public class PagoServiceImpl implements PagoService {
                 .conformidadEmitida(p.getConformidadEmitida())
                 .idContrato(p.getContrato().getIdContrato())
                 .build();
+    }
+
+    private Contrato buscarContrato(Long idContrato) {
+        return contratoRepository.findById(idContrato)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Contrato no encontrado con ID: " + idContrato));
     }
 }

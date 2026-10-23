@@ -1,9 +1,12 @@
 package pe.com.fadide.sisco.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import pe.com.fadide.sisco.common.exception.RecursoNoEncontradoException;
+import pe.com.fadide.sisco.common.service.impl.CrudServiceImpl;
 import pe.com.fadide.sisco.dto.ContratoRequestDTO;
 import pe.com.fadide.sisco.dto.ContratoResponseDTO;
 import pe.com.fadide.sisco.model.Contrato;
@@ -15,11 +18,10 @@ import pe.com.fadide.sisco.repository.ProyectoRepository;
 import pe.com.fadide.sisco.repository.SupervisionRepository;
 import pe.com.fadide.sisco.service.ContratoService;
 
-import java.util.List;
-
 @Service
 @RequiredArgsConstructor
-public class ContratoServiceImpl implements ContratoService {
+public class ContratoServiceImpl extends CrudServiceImpl<Contrato, ContratoRequestDTO, ContratoResponseDTO, Long>
+        implements ContratoService {
 
     private final ContratoRepository contratoRepository;
     private final ProyectoRepository proyectoRepository;
@@ -28,19 +30,17 @@ public class ContratoServiceImpl implements ContratoService {
     private final SupervisionRepository supervisionRepository;
 
     @Override
-    public List<ContratoResponseDTO> findAll() {
-        return contratoRepository.findAll().stream()
-                .map(this::toResponse)
-                .toList();
+    protected JpaRepository<Contrato, Long> getRepository() {
+        return contratoRepository;
     }
 
     @Override
-    public ContratoResponseDTO findById(Long id) {
-        return toResponse(getOrThrow(id));
+    protected String mensajeNoEncontrado(Long id) {
+        return "Contrato no encontrado con ID: " + id;
     }
 
     @Override
-    public ContratoResponseDTO create(ContratoRequestDTO dto) {
+    protected void validarCrear(ContratoRequestDTO dto) {
         // Regla: la fecha de fin no puede ser anterior a la fecha de inicio
         if (dto.getFechaFin().isBefore(dto.getFechaInicio())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
@@ -52,27 +52,10 @@ public class ContratoServiceImpl implements ContratoService {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "Ya existe un contrato con el numero: " + dto.getNumeroContrato());
         }
-
-        Proyecto proyecto = proyectoRepository.findById(dto.getIdProyecto())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-                        "Proyecto no encontrado con ID: " + dto.getIdProyecto()));
-
-        Contrato contrato = Contrato.builder()
-                .numeroContrato(dto.getNumeroContrato())
-                .fechaInicio(dto.getFechaInicio())
-                .fechaFin(dto.getFechaFin())
-                .montoTotal(dto.getMontoTotal())
-                .estado(dto.getEstado() != null ? dto.getEstado() : "VIGENTE")
-                .proyecto(proyecto)
-                .build();
-
-        return toResponse(contratoRepository.save(contrato));
     }
 
     @Override
-    public void deleteById(Long id) {
-        Contrato contrato = getOrThrow(id);
-
+    protected void validarEliminar(Long id, Contrato contrato) {
         // Regla: no se puede eliminar un contrato con pagos asociados
         if (pagoRepository.existsByContrato_IdContrato(id)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
@@ -88,17 +71,35 @@ public class ContratoServiceImpl implements ContratoService {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "No se puede eliminar: el contrato tiene una supervision registrada");
         }
-
-        contratoRepository.delete(contrato);
     }
 
-    private Contrato getOrThrow(Long id) {
-        return contratoRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-                        "Contrato no encontrado con ID: " + id));
+    @Override
+    protected Contrato toEntity(ContratoRequestDTO dto) {
+        return Contrato.builder()
+                .numeroContrato(dto.getNumeroContrato())
+                .fechaInicio(dto.getFechaInicio())
+                .fechaFin(dto.getFechaFin())
+                .montoTotal(dto.getMontoTotal())
+                .estado(dto.getEstado() != null ? dto.getEstado() : "VIGENTE")
+                .proyecto(buscarProyecto(dto.getIdProyecto()))
+                .build();
     }
 
-    private ContratoResponseDTO toResponse(Contrato c) {
+    // El controller no expone PUT (el backend solo registra contratos); se implementa por el contrato genérico
+    @Override
+    protected void actualizarEntidad(Contrato contrato, ContratoRequestDTO dto) {
+        contrato.setNumeroContrato(dto.getNumeroContrato());
+        contrato.setFechaInicio(dto.getFechaInicio());
+        contrato.setFechaFin(dto.getFechaFin());
+        contrato.setMontoTotal(dto.getMontoTotal());
+        if (dto.getEstado() != null) {
+            contrato.setEstado(dto.getEstado());
+        }
+        contrato.setProyecto(buscarProyecto(dto.getIdProyecto()));
+    }
+
+    @Override
+    protected ContratoResponseDTO toResponse(Contrato c) {
         return ContratoResponseDTO.builder()
                 .idContrato(c.getIdContrato())
                 .numeroContrato(c.getNumeroContrato())
@@ -108,5 +109,11 @@ public class ContratoServiceImpl implements ContratoService {
                 .estado(c.getEstado())
                 .idProyecto(c.getProyecto().getIdProyecto())
                 .build();
+    }
+
+    private Proyecto buscarProyecto(Long idProyecto) {
+        return proyectoRepository.findById(idProyecto)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Proyecto no encontrado con ID: " + idProyecto));
     }
 }

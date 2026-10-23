@@ -9,6 +9,7 @@ import pe.com.fadide.sisco.service.RolService;
 
 import java.util.List;
 
+// CRUD parcial: los roles solo se listan y eliminan, por eso no hereda de CrudController
 @RestController
 @RequestMapping("/api/roles")
 @RequiredArgsConstructor
@@ -18,14 +19,14 @@ public class RolController {
 
     @GetMapping
     public ResponseEntity<List<RolResponseDTO>> listAll() {
-        return ResponseEntity.ok(rolService.findAll());
+        return ResponseEntity.ok(rolService.listar());
     }
 
     // Regla: solo el rol ADMIN puede eliminar roles
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        rolService.deleteById(id);
+        rolService.eliminar(id);
         return ResponseEntity.noContent().build();
     }
 }

@@ -2,27 +2,21 @@ package pe.com.fadide.sisco.controller;
 
 import java.util.List;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import jakarta.validation.Valid;
+import pe.com.fadide.sisco.common.controller.CrudController;
+import pe.com.fadide.sisco.common.service.CrudService;
 import pe.com.fadide.sisco.dto.ContratistaRequest;
 import pe.com.fadide.sisco.dto.ContratistaResponse;
 import pe.com.fadide.sisco.service.ContratistaService;
 
 @RestController
 @RequestMapping("/api/contratistas")
-public class ContratistaController {
+public class ContratistaController extends CrudController<ContratistaRequest, ContratistaResponse, Long> {
 
     private final ContratistaService contratistaService;
 
@@ -30,33 +24,24 @@ public class ContratistaController {
         this.contratistaService = contratistaService;
     }
 
-    @GetMapping
-    public ResponseEntity<List<ContratistaResponse>> listar(@RequestParam(required = false) String nombre) {
+    // GET /api/contratistas?nombre=... (sin el parámetro responde el GET genérico)
+    @GetMapping(params = "nombre")
+    public ResponseEntity<List<ContratistaResponse>> listarPorNombre(@RequestParam String nombre) {
         return ResponseEntity.ok(contratistaService.listar(nombre));
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<ContratistaResponse> obtener(@PathVariable Long id) {
-        return ResponseEntity.ok(contratistaService.obtener(id));
+    @Override
+    protected CrudService<ContratistaRequest, ContratistaResponse, Long> getService() {
+        return contratistaService;
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR')")
-    @PostMapping
-    public ResponseEntity<ContratistaResponse> crear(@Valid @RequestBody ContratistaRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(contratistaService.crear(request));
+    @Override
+    protected Long obtenerId(ContratistaResponse response) {
+        return response.idContratista();
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR')")
-    @PutMapping("/{id}")
-    public ResponseEntity<ContratistaResponse> actualizar(@PathVariable Long id,
-                                                          @Valid @RequestBody ContratistaRequest request) {
-        return ResponseEntity.ok(contratistaService.actualizar(id, request));
-    }
-
-    @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR')")
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
-        contratistaService.eliminar(id);
-        return ResponseEntity.noContent().build();
+    @Override
+    public String[] rolesEscritura() {
+        return new String[] { "ADMIN", "GESTOR" };
     }
 }
