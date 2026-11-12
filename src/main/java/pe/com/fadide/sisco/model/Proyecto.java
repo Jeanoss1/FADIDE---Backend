@@ -16,6 +16,9 @@ import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -36,17 +39,23 @@ public class Proyecto {
     @Column(name = "id_proyecto")
     private Long idProyecto;
 
+    @NotBlank(message = "El nombre de la obra es obligatorio")
+    @Size(max = 150, message = "El nombre no puede superar 150 caracteres")
     @Column(name = "nombre", nullable = false, length = 150)
     private String nombre;
 
+    @NotBlank(message = "La ubicación es obligatoria")
+    @Size(max = 200, message = "La ubicación no puede superar 200 caracteres")
     @Column(name = "ubicacion", nullable = false, length = 200)
     private String ubicacion;
 
+    @NotNull(message = "El estado es obligatorio")
     @Enumerated(EnumType.STRING)
     @Column(name = "estado", nullable = false, length = 20)
     @Builder.Default
     private EstadoProyecto estado = EstadoProyecto.PLANIFICADO;
 
+    @NotNull(message = "La obra debe pertenecer a un cliente")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_cliente", nullable = false)
     private Cliente cliente;
