@@ -32,6 +32,9 @@ public class DataSeeder implements CommandLineRunner {
                 .orElseGet(() -> rolRepository.save(Rol.builder().nombre("GESTOR").build()));
         rolRepository.findByNombre("SUPERVISOR")
                 .orElseGet(() -> rolRepository.save(Rol.builder().nombre("SUPERVISOR").build()));
+        // Rol asignado a quien se autoregistra desde el portal público
+        rolRepository.findByNombre("CLIENTE")
+                .orElseGet(() -> rolRepository.save(Rol.builder().nombre("CLIENTE").build()));
 
         if (usuarioRepository.findByCorreo(adminCorreo).isEmpty()) {
             usuarioRepository.save(Usuario.builder()
