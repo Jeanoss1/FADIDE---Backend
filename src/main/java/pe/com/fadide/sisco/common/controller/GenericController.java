@@ -1,9 +1,11 @@
 package pe.com.fadide.sisco.common.controller;
 
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pe.com.fadide.sisco.common.service.GenericService;
+import pe.com.fadide.sisco.config.ResourceNotFoundException;
 
 import java.util.List;
 
@@ -18,18 +20,19 @@ public abstract class GenericController<T, ID> {
 
     @GetMapping("/{id}")
     public ResponseEntity<T> getById(@PathVariable ID id) {
+        // 404 con cuerpo JSON uniforme (GlobalExceptionHandler) en vez de una respuesta vacía
         return getService().findById(id)
                 .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+                .orElseThrow(() -> new ResourceNotFoundException("Registro no encontrado con ID: " + id));
     }
 
     @PostMapping
-    public ResponseEntity<T> create(@RequestBody T entity) {
+    public ResponseEntity<T> create(@Valid @RequestBody T entity) {
         return new ResponseEntity<>(getService().save(entity), HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<T> update(@PathVariable ID id, @RequestBody T entity) {
+    public ResponseEntity<T> update(@PathVariable ID id, @Valid @RequestBody T entity) {
         return ResponseEntity.ok(getService().update(id, entity));
     }
 
