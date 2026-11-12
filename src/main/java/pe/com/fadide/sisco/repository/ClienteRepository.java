@@ -1,6 +1,7 @@
 package pe.com.fadide.sisco.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -14,6 +15,8 @@ import pe.com.fadide.sisco.model.Cliente;
 public interface ClienteRepository extends JpaRepository<Cliente, Long> {
 
     boolean existsByRuc(String ruc);
+
+    Optional<Cliente> findByRuc(String ruc);
 
     boolean existsByRucAndIdClienteNot(String ruc, Long idCliente);
 
