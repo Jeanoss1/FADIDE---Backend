@@ -3,6 +3,7 @@ package pe.com.fadide.sisco.repository;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -12,7 +13,7 @@ import pe.com.fadide.sisco.model.Proyecto;
 
 // Patrón Repository: acceso a datos abstraído con Spring Data JPA
 @Repository
-public interface ProyectoRepository extends JpaRepository<Proyecto, Long> {
+public interface ProyectoRepository extends JpaRepository<Proyecto, Long>, JpaSpecificationExecutor<Proyecto> {
 
     @Query("select p from Proyecto p order by p.nombre")
     List<Proyecto> listarTodos();
@@ -26,4 +27,10 @@ public interface ProyectoRepository extends JpaRepository<Proyecto, Long> {
     @Query("select p from Proyecto p where p.estado = :estado and p.cliente.idCliente = :idCliente order by p.nombre")
     List<Proyecto> buscarPorEstadoYCliente(@Param("estado") EstadoProyecto estado,
                                            @Param("idCliente") Long idCliente);
+
+    // Dashboard: cantidad de obras agrupadas por estado -> [estado, total]
+    @Query("select p.estado, count(p) from Proyecto p group by p.estado")
+    List<Object[]> contarPorEstado();
+
+    long countByEstado(EstadoProyecto estado);
 }
