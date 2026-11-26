@@ -2,6 +2,12 @@ package pe.com.fadide.sisco.controller;
 
 import java.util.List;
 
+import jakarta.validation.Valid;
+
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -15,7 +21,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import jakarta.validation.Valid;
+import pe.com.fadide.sisco.dto.FiltroBusqueda;
+import pe.com.fadide.sisco.dto.PageResponse;
 import pe.com.fadide.sisco.dto.ProyectoRequest;
 import pe.com.fadide.sisco.dto.ProyectoResponse;
 import pe.com.fadide.sisco.model.EstadoProyecto;
@@ -29,6 +36,14 @@ public class ProyectoController {
 
     public ProyectoController(ProyectoService proyectoService) {
         this.proyectoService = proyectoService;
+    }
+
+    // Listado paginado con búsqueda y filtros: /page?q=&estado=&desde=&hasta=&page=0&size=10&sort=nombre,asc
+    @GetMapping("/page")
+    public ResponseEntity<PageResponse<ProyectoResponse>> paginar(
+            @ParameterObject FiltroBusqueda filtro,
+            @ParameterObject @PageableDefault(size = 10, sort = "nombre", direction = Sort.Direction.ASC) Pageable pageable) {
+        return ResponseEntity.ok(proyectoService.buscar(filtro, pageable));
     }
 
     @GetMapping

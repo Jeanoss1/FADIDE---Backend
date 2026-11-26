@@ -4,11 +4,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import pe.com.fadide.sisco.config.ConflictException;
 import pe.com.fadide.sisco.config.ResourceNotFoundException;
+import pe.com.fadide.sisco.dto.FiltroBusqueda;
+import pe.com.fadide.sisco.dto.PageResponse;
 import pe.com.fadide.sisco.dto.ProyectoRequest;
 import pe.com.fadide.sisco.dto.ProyectoResponse;
 import pe.com.fadide.sisco.model.Cliente;
@@ -20,6 +23,7 @@ import pe.com.fadide.sisco.repository.ContratistaRepository;
 import pe.com.fadide.sisco.repository.ContratoRepository;
 import pe.com.fadide.sisco.repository.LicenciaRepository;
 import pe.com.fadide.sisco.repository.ProyectoRepository;
+import pe.com.fadide.sisco.specification.Especificaciones;
 
 // Patrón Singleton: bean de Spring con una única instancia
 @Service
@@ -123,5 +127,11 @@ public class ProyectoService {
             throw new ResourceNotFoundException("Contratistas no encontrados con id " + faltantes);
         }
         return new HashSet<>(encontrados);
+    }
+
+    // Listado paginado con búsqueda y filtros (GET /api/{recurso}/page)
+    @Transactional(readOnly = true)
+    public PageResponse<ProyectoResponse> buscar(FiltroBusqueda filtro, Pageable pageable) {
+        return PageResponse.of(proyectoRepository.findAll(Especificaciones.proyectos(filtro), pageable), ProyectoResponse::from);
     }
 }

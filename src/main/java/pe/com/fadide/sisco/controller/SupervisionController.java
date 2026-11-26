@@ -2,6 +2,12 @@ package pe.com.fadide.sisco.controller;
 
 import java.util.List;
 
+import jakarta.validation.Valid;
+
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -15,7 +21,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import jakarta.validation.Valid;
+import pe.com.fadide.sisco.dto.FiltroBusqueda;
+import pe.com.fadide.sisco.dto.PageResponse;
 import pe.com.fadide.sisco.dto.SupervisionRequest;
 import pe.com.fadide.sisco.dto.SupervisionResponse;
 import pe.com.fadide.sisco.service.SupervisionService;
@@ -28,6 +35,14 @@ public class SupervisionController {
 
     public SupervisionController(SupervisionService supervisionService) {
         this.supervisionService = supervisionService;
+    }
+
+    // Listado paginado con búsqueda y filtros: /page?q=&estado=&desde=&hasta=&page=0&size=10&sort=fechaRegistro,desc
+    @GetMapping("/page")
+    public ResponseEntity<PageResponse<SupervisionResponse>> paginar(
+            @ParameterObject FiltroBusqueda filtro,
+            @ParameterObject @PageableDefault(size = 10, sort = "fechaRegistro", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(supervisionService.buscar(filtro, pageable));
     }
 
     @GetMapping

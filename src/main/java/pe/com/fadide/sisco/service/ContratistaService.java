@@ -2,6 +2,7 @@ package pe.com.fadide.sisco.service;
 
 import java.util.List;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -9,8 +10,11 @@ import pe.com.fadide.sisco.config.ConflictException;
 import pe.com.fadide.sisco.config.ResourceNotFoundException;
 import pe.com.fadide.sisco.dto.ContratistaRequest;
 import pe.com.fadide.sisco.dto.ContratistaResponse;
+import pe.com.fadide.sisco.dto.FiltroBusqueda;
+import pe.com.fadide.sisco.dto.PageResponse;
 import pe.com.fadide.sisco.model.Contratista;
 import pe.com.fadide.sisco.repository.ContratistaRepository;
+import pe.com.fadide.sisco.specification.Especificaciones;
 
 // Patrón Singleton: bean de Spring con una única instancia
 @Service
@@ -66,5 +70,11 @@ public class ContratistaService {
     private Contratista buscar(Long id) {
         return contratistaRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Contratista no encontrado con id " + id));
+    }
+
+    // Listado paginado con búsqueda y filtros (GET /api/{recurso}/page)
+    @Transactional(readOnly = true)
+    public PageResponse<ContratistaResponse> buscar(FiltroBusqueda filtro, Pageable pageable) {
+        return PageResponse.of(contratistaRepository.findAll(Especificaciones.contratistas(filtro), pageable), ContratistaResponse::from);
     }
 }
