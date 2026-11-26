@@ -1,10 +1,18 @@
 package pe.com.fadide.sisco.service.impl;
 
+import java.util.List;
+
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+
+import pe.com.fadide.sisco.dto.FiltroBusqueda;
+import pe.com.fadide.sisco.dto.PageResponse;
 import pe.com.fadide.sisco.dto.UsuarioRequestDTO;
 import pe.com.fadide.sisco.dto.UsuarioResponseDTO;
 import pe.com.fadide.sisco.model.Rol;
@@ -12,8 +20,7 @@ import pe.com.fadide.sisco.model.Usuario;
 import pe.com.fadide.sisco.repository.RolRepository;
 import pe.com.fadide.sisco.repository.UsuarioRepository;
 import pe.com.fadide.sisco.service.UsuarioService;
-
-import java.util.List;
+import pe.com.fadide.sisco.specification.Especificaciones;
 
 @Service
 @RequiredArgsConstructor
@@ -65,5 +72,12 @@ public class UsuarioServiceImpl implements UsuarioService {
                 .idRol(u.getRol().getIdRol())
                 .nombreRol(u.getRol().getNombre())
                 .build();
+    }
+
+    // Listado paginado con búsqueda y filtros (GET /api/{recurso}/page)
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<UsuarioResponseDTO> buscar(FiltroBusqueda filtro, Pageable pageable) {
+        return PageResponse.of(usuarioRepository.findAll(Especificaciones.usuarios(filtro), pageable), this::toResponse);
     }
 }
