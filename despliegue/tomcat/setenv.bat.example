@@ -1,0 +1,17 @@
+@echo off
+rem Variables de entorno para el ensayo local con Tomcat 11 portable en Windows (Escenario 1).
+rem Uso: copiar como apache-tomcat-11.x\bin\setenv.bat, reemplazar los valores CAMBIAR_...
+rem y levantar Tomcat con bin\startup.bat. El WAR se copia en webapps\sisco.war.
+
+set "DB_URL=jdbc:postgresql://localhost:5432/sisco_db"
+set "DB_USERNAME=postgres"
+set "DB_PASSWORD=CAMBIAR_password_de_la_bd"
+
+set "JWT_SECRET=CAMBIAR_clave_secreta_de_32_o_mas_caracteres"
+set "JWT_EXPIRATION_MS=28800000"
+
+rem Frontend servido localmente (ng serve o un Apache local)
+set "CORS_ALLOWED_ORIGINS=http://localhost:4200,http://localhost"
+
+set "SHOW_SQL=false"
+set "CATALINA_OPTS=%CATALINA_OPTS% -Xms256m -Xmx640m -Djava.awt.headless=true -Duser.timezone=America/Lima"
