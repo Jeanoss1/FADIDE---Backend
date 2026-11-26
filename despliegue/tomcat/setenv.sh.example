@@ -1,0 +1,36 @@
+#!/bin/sh
+# Variables de entorno del backend SISCO para Apache Tomcat 11 (VM-Backend, Ubuntu Server).
+#
+# Uso:
+#   cp setenv.sh.example /opt/tomcat/bin/setenv.sh
+#   nano /opt/tomcat/bin/setenv.sh        # reemplazar los valores CAMBIAR_...
+#   chmod 750 /opt/tomcat/bin/setenv.sh
+#
+# Tomcat lee este archivo al ejecutar bin/startup.sh. Las credenciales quedan en el
+# servidor de aplicaciones y NUNCA en el código ni en el repositorio (este archivo es solo
+# una plantilla; el setenv.sh real no se sube a GitHub).
+
+# ---------- Base de datos (VM-BD) ----------
+export DB_URL="jdbc:postgresql://192.168.56.10:5432/sisco_db"
+export DB_USERNAME="sisco"
+export DB_PASSWORD="CAMBIAR_password_de_la_bd"
+
+# ---------- JWT ----------
+# Clave de al menos 32 caracteres. Generar una con:  openssl rand -base64 48
+export JWT_SECRET="CAMBIAR_clave_secreta_de_32_o_mas_caracteres"
+# Tiempo de expiración del token en milisegundos (8 horas)
+export JWT_EXPIRATION_MS="28800000"
+
+# ---------- CORS: origen real del frontend (VM-Frontend) ----------
+export CORS_ALLOWED_ORIGINS="http://192.168.56.30"
+
+# ---------- Administrador inicial que crea DataSeeder ----------
+export ADMIN_CORREO="admin@fadide.com"
+export ADMIN_PASSWORD="CAMBIAR_password_del_admin"
+
+# ---------- Otros ----------
+export SHOW_SQL="false"
+
+# Memoria de la JVM y modo sin interfaz gráfica (necesario para generar los Excel en un
+# servidor sin escritorio). Ajustado para una VM de 1.5 GB de RAM.
+export CATALINA_OPTS="$CATALINA_OPTS -Xms256m -Xmx640m -Djava.awt.headless=true -Duser.timezone=America/Lima"

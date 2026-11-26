@@ -11,6 +11,8 @@
 	<groupId>pe.com.fadide</groupId>
 	<artifactId>sisco-backend</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
+	<!-- Despliegue en Apache Tomcat 11: se genera un archivo WAR en lugar de un JAR ejecutable -->
+	<packaging>war</packaging>
 	<name/>
 	<description/>
 	<url/>
@@ -46,6 +48,25 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-security</artifactId>
+		</dependency>
+
+		<!-- Tomcat embebido solo para desarrollo: en el WAR lo provee el Tomcat 11 del servidor -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-tomcat</artifactId>
+			<scope>provided</scope>
+		</dependency>
+
+		<!-- Exportación de reportes a PDF (OpenPDF) y a Excel (Apache POI) -->
+		<dependency>
+			<groupId>com.github.librepdf</groupId>
+			<artifactId>openpdf</artifactId>
+			<version>2.0.3</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi-ooxml</artifactId>
+			<version>5.4.1</version>
 		</dependency>
 
 		<dependency>
@@ -88,6 +109,8 @@
 	</dependencies>
 
 	<build>
+		<!-- target/sisco.war: Tomcat lo publica en el contexto /sisco -->
+		<finalName>sisco</finalName>
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>

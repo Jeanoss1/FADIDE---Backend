@@ -3,6 +3,7 @@ package pe.com.fadide.sisco.repository;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -11,7 +12,7 @@ import pe.com.fadide.sisco.model.Contratista;
 
 // Patrón Repository: acceso a datos abstraído con Spring Data JPA
 @Repository
-public interface ContratistaRepository extends JpaRepository<Contratista, Long> {
+public interface ContratistaRepository extends JpaRepository<Contratista, Long>, JpaSpecificationExecutor<Contratista> {
 
     boolean existsByRuc(String ruc);
 

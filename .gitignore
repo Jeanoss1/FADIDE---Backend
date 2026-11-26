@@ -31,3 +31,7 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Despliegue: archivos con credenciales reales (solo se suben las plantillas .example)
+despliegue/**/setenv.sh
+despliegue/**/setenv.bat

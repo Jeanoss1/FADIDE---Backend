@@ -2,11 +2,14 @@ package pe.com.fadide.sisco.service;
 
 import java.util.List;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import pe.com.fadide.sisco.config.ConflictException;
 import pe.com.fadide.sisco.config.ResourceNotFoundException;
+import pe.com.fadide.sisco.dto.FiltroBusqueda;
+import pe.com.fadide.sisco.dto.PageResponse;
 import pe.com.fadide.sisco.dto.SupervisionRequest;
 import pe.com.fadide.sisco.dto.SupervisionResponse;
 import pe.com.fadide.sisco.model.Contrato;
@@ -17,6 +20,7 @@ import pe.com.fadide.sisco.repository.EvidenciaRepository;
 import pe.com.fadide.sisco.repository.ObservacionRepository;
 import pe.com.fadide.sisco.repository.SupervisionRepository;
 import pe.com.fadide.sisco.repository.UsuarioRepository;
+import pe.com.fadide.sisco.specification.Especificaciones;
 
 // Patrón Singleton: bean de Spring con una única instancia
 @Service
@@ -111,5 +115,11 @@ public class SupervisionService {
     private Usuario buscarUsuarioPorCorreo(String correo) {
         return usuarioRepository.findByCorreo(correo)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario autenticado no encontrado con correo " + correo));
+    }
+
+    // Listado paginado con búsqueda y filtros (GET /api/{recurso}/page)
+    @Transactional(readOnly = true)
+    public PageResponse<SupervisionResponse> buscar(FiltroBusqueda filtro, Pageable pageable) {
+        return PageResponse.of(supervisionRepository.findAll(Especificaciones.supervisiones(filtro), pageable), SupervisionResponse::from);
     }
 }

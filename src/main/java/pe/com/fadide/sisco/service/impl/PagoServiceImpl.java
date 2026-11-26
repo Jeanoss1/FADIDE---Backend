@@ -1,9 +1,18 @@
 package pe.com.fadide.sisco.service.impl;
 
+import java.math.BigDecimal;
+import java.util.List;
+
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+
+import pe.com.fadide.sisco.dto.FiltroBusqueda;
+import pe.com.fadide.sisco.dto.PageResponse;
 import pe.com.fadide.sisco.dto.PagoRequestDTO;
 import pe.com.fadide.sisco.dto.PagoResponseDTO;
 import pe.com.fadide.sisco.model.Contrato;
@@ -11,9 +20,7 @@ import pe.com.fadide.sisco.model.Pago;
 import pe.com.fadide.sisco.repository.ContratoRepository;
 import pe.com.fadide.sisco.repository.PagoRepository;
 import pe.com.fadide.sisco.service.PagoService;
-
-import java.math.BigDecimal;
-import java.util.List;
+import pe.com.fadide.sisco.specification.Especificaciones;
 
 @Service
 @RequiredArgsConstructor
@@ -78,5 +85,12 @@ public class PagoServiceImpl implements PagoService {
                 .conformidadEmitida(p.getConformidadEmitida())
                 .idContrato(p.getContrato().getIdContrato())
                 .build();
+    }
+
+    // Listado paginado con búsqueda y filtros (GET /api/{recurso}/page)
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<PagoResponseDTO> buscar(FiltroBusqueda filtro, Pageable pageable) {
+        return PageResponse.of(pagoRepository.findAll(Especificaciones.pagos(filtro), pageable), this::toResponse);
     }
 }

@@ -3,18 +3,22 @@ package pe.com.fadide.sisco.service;
 import java.time.LocalDate;
 import java.util.List;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import pe.com.fadide.sisco.config.BadRequestException;
 import pe.com.fadide.sisco.config.ConflictException;
 import pe.com.fadide.sisco.config.ResourceNotFoundException;
+import pe.com.fadide.sisco.dto.FiltroBusqueda;
 import pe.com.fadide.sisco.dto.LicenciaRequest;
 import pe.com.fadide.sisco.dto.LicenciaResponse;
+import pe.com.fadide.sisco.dto.PageResponse;
 import pe.com.fadide.sisco.model.Licencia;
 import pe.com.fadide.sisco.model.Proyecto;
 import pe.com.fadide.sisco.repository.LicenciaRepository;
 import pe.com.fadide.sisco.repository.ProyectoRepository;
+import pe.com.fadide.sisco.specification.Especificaciones;
 
 // Patrón Singleton: bean de Spring con una única instancia
 @Service
@@ -111,5 +115,11 @@ public class LicenciaService {
         if (!request.fechaVencimiento().isAfter(request.fechaEmision())) {
             throw new BadRequestException("La fecha de vencimiento debe ser posterior a la fecha de emisión");
         }
+    }
+
+    // Listado paginado con búsqueda y filtros (GET /api/{recurso}/page)
+    @Transactional(readOnly = true)
+    public PageResponse<LicenciaResponse> buscar(FiltroBusqueda filtro, Pageable pageable) {
+        return PageResponse.of(licenciaRepository.findAll(Especificaciones.licencias(filtro), pageable), LicenciaResponse::from);
     }
 }

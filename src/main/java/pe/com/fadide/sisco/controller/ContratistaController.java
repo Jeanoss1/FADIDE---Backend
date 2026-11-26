@@ -2,6 +2,12 @@ package pe.com.fadide.sisco.controller;
 
 import java.util.List;
 
+import jakarta.validation.Valid;
+
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -15,9 +21,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import jakarta.validation.Valid;
 import pe.com.fadide.sisco.dto.ContratistaRequest;
 import pe.com.fadide.sisco.dto.ContratistaResponse;
+import pe.com.fadide.sisco.dto.FiltroBusqueda;
+import pe.com.fadide.sisco.dto.PageResponse;
 import pe.com.fadide.sisco.service.ContratistaService;
 
 @RestController
@@ -28,6 +35,14 @@ public class ContratistaController {
 
     public ContratistaController(ContratistaService contratistaService) {
         this.contratistaService = contratistaService;
+    }
+
+    // Listado paginado con búsqueda y filtros: /page?q=&estado=&desde=&hasta=&page=0&size=10&sort=nombre,asc
+    @GetMapping("/page")
+    public ResponseEntity<PageResponse<ContratistaResponse>> paginar(
+            @ParameterObject FiltroBusqueda filtro,
+            @ParameterObject @PageableDefault(size = 10, sort = "nombre", direction = Sort.Direction.ASC) Pageable pageable) {
+        return ResponseEntity.ok(contratistaService.buscar(filtro, pageable));
     }
 
     @GetMapping

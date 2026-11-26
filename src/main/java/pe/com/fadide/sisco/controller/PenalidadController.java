@@ -1,16 +1,24 @@
 package pe.com.fadide.sisco.controller;
 
+import java.util.List;
+
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import pe.com.fadide.sisco.dto.FiltroBusqueda;
+import pe.com.fadide.sisco.dto.PageResponse;
 import pe.com.fadide.sisco.dto.PenalidadRequestDTO;
 import pe.com.fadide.sisco.dto.PenalidadResponseDTO;
 import pe.com.fadide.sisco.service.PenalidadService;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/penalidades")
@@ -18,6 +26,14 @@ import java.util.List;
 public class PenalidadController {
 
     private final PenalidadService penalidadService;
+
+    // Listado paginado con búsqueda y filtros: /page?q=&estado=&desde=&hasta=&page=0&size=10&sort=fechaAplicacion,desc
+    @GetMapping("/page")
+    public ResponseEntity<PageResponse<PenalidadResponseDTO>> paginar(
+            @ParameterObject FiltroBusqueda filtro,
+            @ParameterObject @PageableDefault(size = 10, sort = "fechaAplicacion", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(penalidadService.buscar(filtro, pageable));
+    }
 
     @GetMapping
     public ResponseEntity<List<PenalidadResponseDTO>> listAll() {
