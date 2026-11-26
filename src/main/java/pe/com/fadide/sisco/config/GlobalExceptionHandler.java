@@ -1,9 +1,16 @@
 package pe.com.fadide.sisco.config;
 
+import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
+import org.springframework.data.core.PropertyReferenceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -17,10 +24,6 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
-
-import java.time.LocalDateTime;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 /**
  * Control de excepciones centralizado (patrón Advice / AOP).
@@ -103,6 +106,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleTypeMismatch(MethodArgumentTypeMismatchException ex, HttpServletRequest req) {
         // Parámetro de ruta o de consulta con tipo incorrecto, por ejemplo /api/clientes/abc
         return build(HttpStatus.BAD_REQUEST, "Valor inválido para el parámetro '" + ex.getName() + "': " + ex.getValue(), req);
+    }
+
+    @ExceptionHandler({PropertyReferenceException.class, InvalidDataAccessApiUsageException.class})
+    public ResponseEntity<Map<String, Object>> handleSortInvalido(RuntimeException ex, HttpServletRequest req) {
+        // Listado paginado con un campo de ordenamiento inexistente, por ejemplo ?sort=campoFalso,asc
+        return build(HttpStatus.BAD_REQUEST, "Campo de ordenamiento no válido en el parámetro 'sort'", req);
     }
 
     // ---------- 401 / 403: seguridad ----------
