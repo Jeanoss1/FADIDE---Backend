@@ -32,6 +32,8 @@ sin degradar el equipo y repetir el despliegue el día de la sustentación con u
 | **sisco-backend** | `despliegue/docker/backend/Dockerfile` | `apt install openjdk-17-jre-headless` · descarga **Tomcat 11.0.29 portable** (`.tar.gz`) en `/opt/tomcat` · usuario sin privilegios `tomcat` · `bin/setenv.sh` (JVM) · `sisco.war` en `webapps` · arranque con **`bin/startup.sh`** y parada con `bin/shutdown.sh` · carga `datos-demo.sql` con `psql` |
 | **sisco-frontend** | `despliegue/docker/frontend/Dockerfile` | `dnf install httpd` · `sisco.conf` (VirtualHost, `AllowOverride All`) · build de Angular en `/var/www/html` con su `.htaccess` (rutas de Angular y cabeceras de seguridad) |
 
+Los archivos de evidencia que suben los supervisores (imágenes, PDF, Word, Excel, PowerPoint, DWG, texto; máx. 10 MB) se guardan en el volumen `sisco-evidencias` (`/var/lib/sisco/evidencias`), por lo que sobreviven a los redespliegues.
+
 Las credenciales (BD, JWT, administrador) **no están en las imágenes ni en el repositorio**: viajan como
 variables de entorno desde `despliegue/docker/.env` (ignorado por Git; plantilla en `.env.example`).
 
@@ -72,7 +74,7 @@ docker compose logs -f backend        # Ctrl+C para salir
 | Detener (los datos se conservan) | `docker compose down` |
 | Reiniciar solo el backend | `docker compose restart backend` |
 | Desplegar un nuevo WAR / build | `..\..\despliegue\docker\preparar.ps1` |
-| Borrar TODO, incluida la BD | `docker compose down -v` |
+| Borrar TODO, incluida la BD y los archivos de evidencia | `docker compose down -v` |
 | Entrar a un servidor | `docker exec -it sisco-backend bash` |
 
 ## Acceso
