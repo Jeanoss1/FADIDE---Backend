@@ -22,6 +22,10 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
@@ -124,6 +128,22 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleAccessDenied(AccessDeniedException ex, HttpServletRequest req) {
         // @PreAuthorize rechazó al usuario: su rol no puede ejecutar esta operación
         return build(HttpStatus.FORBIDDEN, "Tu rol no tiene permisos para realizar esta operación", req);
+    }
+
+    // ---------- Subida de archivos ----------
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<Map<String, Object>> handleMaxUpload(MaxUploadSizeExceededException ex, HttpServletRequest req) {
+        return build(HttpStatus.PAYLOAD_TOO_LARGE, "El archivo supera el tamaño máximo de 10 MB", req);
+    }
+
+    @ExceptionHandler({MissingServletRequestPartException.class, MissingServletRequestParameterException.class})
+    public ResponseEntity<Map<String, Object>> handleMissingPart(Exception ex, HttpServletRequest req) {
+        return build(HttpStatus.BAD_REQUEST, "Faltan datos obligatorios: " + ex.getMessage(), req);
+    }
+
+    @ExceptionHandler(MultipartException.class)
+    public ResponseEntity<Map<String, Object>> handleMultipart(MultipartException ex, HttpServletRequest req) {
+        return build(HttpStatus.BAD_REQUEST, "No se pudo leer el archivo enviado", req);
     }
 
     // ---------- 405 ----------
