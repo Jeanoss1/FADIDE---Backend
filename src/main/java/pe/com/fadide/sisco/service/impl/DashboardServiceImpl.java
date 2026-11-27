@@ -70,14 +70,15 @@ public class DashboardServiceImpl implements DashboardService {
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado: " + correo));
         String rol = usuario.getRol().getNombre();
 
+        // Las licencias son del módulo de gestión: el supervisor no las ve (ni KPI ni listado)
         LocalDate hoy = LocalDate.now();
-        List<LicenciaResponse> porVencer = licenciaRepository
+        List<LicenciaResponse> porVencer = "SUPERVISOR".equals(rol) ? List.of() : licenciaRepository
                 .buscarPorVencer(hoy, hoy.plusDays(DIAS_ALERTA_LICENCIA)).stream()
                 .map(LicenciaResponse::from)
                 .toList();
 
         List<Kpi> kpis = switch (rol) {
-            case "SUPERVISOR" -> kpisSupervisor(correo, porVencer.size());
+            case "SUPERVISOR" -> kpisSupervisor(correo);
             case "GESTOR" -> kpisGestor(porVencer.size());
             default -> kpisAdmin(porVencer.size());
         };
@@ -118,14 +119,13 @@ public class DashboardServiceImpl implements DashboardService {
                 new Kpi("saldo", "Saldo por pagar", contratado.subtract(pagado), "MONEDA", "savings", "/pages/reporte"));
     }
 
-    private List<Kpi> kpisSupervisor(String correo, int licenciasPorVencer) {
+    private List<Kpi> kpisSupervisor(String correo) {
         LocalDate inicioMes = LocalDate.now().withDayOfMonth(1);
         return List.of(
                 kpi("misSupervisiones", "Mis supervisiones", supervisionRepository.countByUsuario_Correo(correo), "NUMERO", "fact_check", "/pages/supervision"),
                 kpi("supervisionesMes", "Supervisiones del equipo (mes)", supervisionRepository.contarDesde(inicioMes), "NUMERO", "event_available", "/pages/supervision"),
                 new Kpi("avance", "Avance físico promedio", escala(BigDecimal.valueOf(supervisionRepository.promedioAvance())), "PORCENTAJE", "trending_up", "/pages/supervision"),
-                kpi("obras", "Obras en ejecución", proyectoRepository.countByEstado(EstadoProyecto.EN_EJECUCION), "NUMERO", "apartment", "/pages/proyecto"),
-                kpi("licencias", "Licencias por vencer (30 d)", licenciasPorVencer, "NUMERO", "warning_amber", "/pages/licencia"));
+                kpi("obras", "Obras en ejecución", proyectoRepository.countByEstado(EstadoProyecto.EN_EJECUCION), "NUMERO", "apartment", "/pages/proyecto"));
     }
 
     // ---------- Gráficos ----------
