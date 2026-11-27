@@ -1,14 +1,10 @@
 package pe.com.fadide.sisco.controller;
 
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.core.io.Resource;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.CacheControl;
-import org.springframework.http.ContentDisposition;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -28,6 +24,7 @@ import jakarta.validation.Valid;
 import pe.com.fadide.sisco.dto.EvidenciaRequest;
 import pe.com.fadide.sisco.dto.EvidenciaResponse;
 import pe.com.fadide.sisco.service.EvidenciaService;
+import pe.com.fadide.sisco.util.RespuestaArchivo;
 
 @RestController
 @RequestMapping("/api/evidencias")
@@ -77,20 +74,7 @@ public class EvidenciaController {
      */
     @GetMapping("/{id}/archivo")
     public ResponseEntity<Resource> descargarArchivo(@PathVariable Long id) {
-        EvidenciaService.ArchivoEvidencia archivo = evidenciaService.descargar(id);
-        ContentDisposition disposicion = (archivo.tipo().visibleEnNavegador()
-                ? ContentDisposition.inline() : ContentDisposition.attachment())
-                .filename(archivo.nombre(), StandardCharsets.UTF_8)
-                .build();
-        ResponseEntity.BodyBuilder respuesta = ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(archivo.tipo().contentType()))
-                .header(HttpHeaders.CONTENT_DISPOSITION, disposicion.toString())
-                .header("X-Content-Type-Options", "nosniff")
-                .cacheControl(CacheControl.noStore());
-        if (archivo.tamano() >= 0) {
-            respuesta.contentLength(archivo.tamano());
-        }
-        return respuesta.body(archivo.recurso());
+        return RespuestaArchivo.de(evidenciaService.descargar(id));
     }
 
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")

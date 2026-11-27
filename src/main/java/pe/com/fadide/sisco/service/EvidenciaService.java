@@ -3,12 +3,12 @@ package pe.com.fadide.sisco.service;
 import java.time.LocalDate;
 import java.util.List;
 
-import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
+import pe.com.fadide.sisco.dto.ArchivoDescarga;
 import pe.com.fadide.sisco.dto.ArchivoGuardado;
 import pe.com.fadide.sisco.model.TipoArchivo;
 import pe.com.fadide.sisco.config.BadRequestException;
@@ -36,9 +36,6 @@ public class EvidenciaService {
         this.almacenamiento = almacenamiento;
     }
 
-    /** Contenido de un archivo de evidencia listo para enviarse al navegador. */
-    public record ArchivoEvidencia(Resource recurso, String nombre, TipoArchivo tipo, long tamano) {
-    }
 
     @Transactional(readOnly = true)
     public List<EvidenciaResponse> listar(Long idSupervision) {
@@ -96,14 +93,14 @@ public class EvidenciaService {
     }
 
     @Transactional(readOnly = true)
-    public ArchivoEvidencia descargar(Long id) {
+    public ArchivoDescarga descargar(Long id) {
         Evidencia evidencia = buscar(id);
         if (evidencia.getArchivo() == null) {
             throw new ResourceNotFoundException("La evidencia " + id + " es un enlace y no tiene archivo adjunto");
         }
         TipoArchivo tipo = TipoArchivo.porExtension(StringUtils.getFilenameExtension(evidencia.getArchivo()))
                 .orElseThrow(() -> new ResourceNotFoundException("Tipo de archivo desconocido"));
-        return new ArchivoEvidencia(almacenamiento.cargar(evidencia.getArchivo()), evidencia.getImagen(), tipo,
+        return new ArchivoDescarga(almacenamiento.cargar(evidencia.getArchivo()), evidencia.getImagen(), tipo,
                 evidencia.getTamanoBytes() == null ? -1 : evidencia.getTamanoBytes());
     }
 
