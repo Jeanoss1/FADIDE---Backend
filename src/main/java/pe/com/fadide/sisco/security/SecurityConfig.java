@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -83,9 +84,23 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         // Errores no controlados: deja ver el código real (400/404/500) en vez de un 403 engañoso
                         .requestMatchers("/error").permitAll()
-                        .requestMatchers("/api/usuarios/**").hasRole("ADMIN")
-                        // El cliente autoregistrado solo accede a su portal; el resto es para el personal interno
+                        // ---------- Matriz de permisos por rol (actores del sistema) ----------
+                        // Administración de usuarios y roles: solo ADMIN
+                        .requestMatchers("/api/usuarios/**", "/api/roles/**").hasRole("ADMIN")
+                        // Gestión contractual y financiera: ADMIN y GESTOR (el supervisor no accede)
+                        .requestMatchers("/api/licencias/**", "/api/pagos/**", "/api/penalidades/**").hasAnyRole("ADMIN", "GESTOR")
+                        // Contratos: el supervisor solo los lee para elegir el contrato de una supervisión
+                        .requestMatchers(HttpMethod.GET, "/api/contratos/**").hasAnyRole("ADMIN", "GESTOR", "SUPERVISOR")
+                        .requestMatchers("/api/contratos/**").hasAnyRole("ADMIN", "GESTOR")
+                        // Trabajo de campo: ADMIN y SUPERVISOR. El gestor solo consulta el avance de un
+                        // contrato (detalle del contrato) para dar conformidad a los pagos.
+                        .requestMatchers(HttpMethod.GET, "/api/supervisiones/contrato/**").hasAnyRole("ADMIN", "GESTOR", "SUPERVISOR")
+                        .requestMatchers("/api/supervisiones/**", "/api/observaciones/**", "/api/evidencias/**").hasAnyRole("ADMIN", "SUPERVISOR")
+                        // El cliente autoregistrado solo accede a su portal
                         .requestMatchers("/api/portal/**").hasRole("CLIENTE")
+                        // Resto (clientes, contratistas, obras, dashboard, reportes): personal interno.
+                        // La escritura de clientes/contratistas/obras se limita con @PreAuthorize y los
+                        // tipos de reporte se filtran por rol en ReporteController.
                         .anyRequest().hasAnyRole("ADMIN", "GESTOR", "SUPERVISOR"))
                 // 401 = sin token o token inválido; 403 = token válido pero rol sin permiso
                 .exceptionHandling(ex -> ex

@@ -60,7 +60,7 @@ public class SupervisionController {
         return ResponseEntity.ok(supervisionService.obtener(id));
     }
 
-    @PreAuthorize("hasRole('SUPERVISOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")
     @PostMapping
     public ResponseEntity<SupervisionResponse> crear(@Valid @RequestBody SupervisionRequest request,
                                                       Authentication authentication) {
@@ -68,14 +68,14 @@ public class SupervisionController {
                 .body(supervisionService.crear(request, authentication.getName()));
     }
 
-    @PreAuthorize("hasRole('SUPERVISOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")
     @PutMapping("/{id}")
     public ResponseEntity<SupervisionResponse> actualizar(@PathVariable Long id,
                                                           @Valid @RequestBody SupervisionRequest request) {
         return ResponseEntity.ok(supervisionService.actualizar(id, request));
     }
 
-    @PreAuthorize("hasRole('SUPERVISOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         supervisionService.eliminar(id);
