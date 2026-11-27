@@ -40,20 +40,20 @@ public class EvidenciaController {
         return ResponseEntity.ok(evidenciaService.obtener(id));
     }
 
-    @PreAuthorize("hasRole('SUPERVISOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")
     @PostMapping
     public ResponseEntity<EvidenciaResponse> crear(@Valid @RequestBody EvidenciaRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(evidenciaService.crear(request));
     }
 
-    @PreAuthorize("hasRole('SUPERVISOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")
     @PutMapping("/{id}")
     public ResponseEntity<EvidenciaResponse> actualizar(@PathVariable Long id,
                                                         @Valid @RequestBody EvidenciaRequest request) {
         return ResponseEntity.ok(evidenciaService.actualizar(id, request));
     }
 
-    @PreAuthorize("hasRole('SUPERVISOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         evidenciaService.eliminar(id);

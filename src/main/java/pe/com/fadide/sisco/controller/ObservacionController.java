@@ -40,20 +40,20 @@ public class ObservacionController {
         return ResponseEntity.ok(observacionService.obtener(id));
     }
 
-    @PreAuthorize("hasRole('SUPERVISOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")
     @PostMapping
     public ResponseEntity<ObservacionResponse> crear(@Valid @RequestBody ObservacionRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(observacionService.crear(request));
     }
 
-    @PreAuthorize("hasRole('SUPERVISOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")
     @PutMapping("/{id}")
     public ResponseEntity<ObservacionResponse> actualizar(@PathVariable Long id,
                                                           @Valid @RequestBody ObservacionRequest request) {
         return ResponseEntity.ok(observacionService.actualizar(id, request));
     }
 
-    @PreAuthorize("hasRole('SUPERVISOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         observacionService.eliminar(id);
