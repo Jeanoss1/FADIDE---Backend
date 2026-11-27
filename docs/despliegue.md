@@ -1,5 +1,8 @@
 # Despliegue distribuido de SISCO — Escenario 2 (tres máquinas virtuales)
 
+> **Escenario elegido por el equipo: Escenario 4 (Docker)** — ver [`despliegue-docker.md`](despliegue-docker.md).
+> Esta guía se conserva como alternativa con máquinas virtuales.
+
 Guía paso a paso para desplegar SISCO en **tres máquinas virtuales de VirtualBox**, cada una con un
 único rol e instalada **solo por consola** (sin entorno gráfico).
 
