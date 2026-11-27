@@ -18,7 +18,7 @@ import pe.com.fadide.sisco.model.Licencia;
 import pe.com.fadide.sisco.model.Proyecto;
 import pe.com.fadide.sisco.repository.LicenciaRepository;
 import pe.com.fadide.sisco.repository.ProyectoRepository;
-import pe.com.fadide.sisco.specification.Especificaciones;
+import pe.com.fadide.sisco.util.Especificaciones;
 
 // Patrón Singleton: bean de Spring con una única instancia
 @Service

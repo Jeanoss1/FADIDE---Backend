@@ -1,4 +1,4 @@
-package pe.com.fadide.sisco.exportacion;
+package pe.com.fadide.sisco.service.impl;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -21,6 +21,7 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 
 import pe.com.fadide.sisco.dto.TablaReporte;
+import pe.com.fadide.sisco.service.ExportadorReporte;
 
 /** Estrategia Excel (.xlsx): título, filtros, encabezado con autofiltro y fila de totales. */
 @Component

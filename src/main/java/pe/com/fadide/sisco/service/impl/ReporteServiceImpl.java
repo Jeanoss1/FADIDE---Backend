@@ -35,7 +35,7 @@ import pe.com.fadide.sisco.repository.ProyectoRepository;
 import pe.com.fadide.sisco.repository.SupervisionRepository;
 import pe.com.fadide.sisco.repository.UsuarioRepository;
 import pe.com.fadide.sisco.service.ReporteService;
-import pe.com.fadide.sisco.specification.Especificaciones;
+import pe.com.fadide.sisco.util.Especificaciones;
 
 /**
  * Arma los reportes reutilizando las mismas especificaciones (filtros) de los listados
