@@ -1,0 +1,89 @@
+# =====================================================================================
+# SISCO / FADIDE · Escenario 4 de despliegue: arquitectura distribuida en contenedores
+#
+#   Navegador (Windows) ──► sisco-frontend  AlmaLinux 9 + Apache httpd   172.20.56.30:80   → localhost:8081
+#            └────────────► sisco-backend   Ubuntu 24.04 + Tomcat 11     172.20.56.20:8080 → localhost:8080/sisco
+#                                 └───────► sisco-bd  Rocky Linux 9 + PostgreSQL 18  172.20.56.10:5432 (solo red interna)
+#
+# Uso (desde esta carpeta, después de ejecutar preparar.ps1):
+#   docker compose up -d --build      construir y levantar
+#   docker compose ps                 estado y salud de los 3 servidores
+#   docker compose logs -f backend    ver catalina.out
+#   docker compose down               detener (los datos de la BD se conservan en el volumen)
+# =====================================================================================
+name: sisco
+
+services:
+  bd:
+    build: ./bd
+    image: sisco/bd:1.0
+    container_name: sisco-bd
+    hostname: sisco-bd
+    environment:
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      BACKEND_IP: 172.20.56.20
+    volumes:
+      - sisco-bd-datos:/var/lib/pgsql/18/data
+    # Sin puertos publicados: la BD solo es accesible dentro de sisco-red y pg_hba.conf
+    # admite únicamente al servidor de aplicaciones (172.20.56.20).
+    networks:
+      sisco-red:
+        ipv4_address: 172.20.56.10
+    mem_limit: 384m
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    image: sisco/backend:1.0
+    container_name: sisco-backend
+    hostname: sisco-backend
+    depends_on:
+      bd:
+        condition: service_healthy
+    environment:
+      DB_HOST: 172.20.56.10
+      DB_URL: jdbc:postgresql://172.20.56.10:5432/sisco_db
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION_MS: "28800000"
+      CORS_ALLOWED_ORIGINS: http://localhost:8081,http://127.0.0.1:8081
+      ADMIN_CORREO: ${ADMIN_CORREO}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      SHOW_SQL: "false"
+      CARGAR_DATOS_DEMO: ${CARGAR_DATOS_DEMO:-true}
+    ports:
+      - "8080:8080"
+    networks:
+      sisco-red:
+        ipv4_address: 172.20.56.20
+    mem_limit: 900m
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    image: sisco/frontend:1.0
+    container_name: sisco-frontend
+    hostname: sisco-frontend
+    depends_on:
+      - backend
+    ports:
+      - "8081:80"
+    networks:
+      sisco-red:
+        ipv4_address: 172.20.56.30
+    mem_limit: 128m
+    restart: unless-stopped
+
+networks:
+  sisco-red:
+    name: sisco-red
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.56.0/24
+
+volumes:
+  sisco-bd-datos:
+    name: sisco-bd-datos

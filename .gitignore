@@ -35,3 +35,10 @@ build/
 ### Despliegue: archivos con credenciales reales (solo se suben las plantillas .example)
 despliegue/**/setenv.sh
 despliegue/**/setenv.bat
+# Docker (Escenario 4): el setenv.sh del contenedor no tiene credenciales y sí se versiona;
+# .env (contraseñas reales) y los artefactos copiados por preparar.ps1 no se suben.
+!despliegue/docker/backend/setenv.sh
+despliegue/docker/.env
+despliegue/docker/backend/sisco.war
+despliegue/docker/backend/datos-demo.sql
+despliegue/docker/frontend/dist/
