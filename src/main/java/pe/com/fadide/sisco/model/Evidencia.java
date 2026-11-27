@@ -31,8 +31,20 @@ public class Evidencia {
     @Column(name = "id_evidencia")
     private Long idEvidencia;
 
+    // Enlace (URL) de la evidencia o, si se subió un archivo, su nombre original
     @Column(name = "imagen", nullable = false, length = 500)
     private String imagen;
+
+    // Archivo subido: nombre con el que se guardó en el servidor (UUID), tipo y tamaño.
+    // Son nulos en las evidencias registradas solo con un enlace.
+    @Column(name = "archivo", length = 60)
+    private String archivo;
+
+    @Column(name = "tipo_contenido", length = 120)
+    private String tipoContenido;
+
+    @Column(name = "tamano_bytes")
+    private Long tamanoBytes;
 
     @Column(name = "descripcion", length = 1000)
     private String descripcion;

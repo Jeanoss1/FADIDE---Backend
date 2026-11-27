@@ -22,7 +22,7 @@ import pe.com.fadide.sisco.repository.PenalidadRepository;
 import pe.com.fadide.sisco.repository.ProyectoRepository;
 import pe.com.fadide.sisco.repository.SupervisionRepository;
 import pe.com.fadide.sisco.service.ContratoService;
-import pe.com.fadide.sisco.specification.Especificaciones;
+import pe.com.fadide.sisco.util.Especificaciones;
 
 @Service
 @RequiredArgsConstructor

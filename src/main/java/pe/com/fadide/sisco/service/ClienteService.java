@@ -14,7 +14,7 @@ import pe.com.fadide.sisco.dto.FiltroBusqueda;
 import pe.com.fadide.sisco.dto.PageResponse;
 import pe.com.fadide.sisco.model.Cliente;
 import pe.com.fadide.sisco.repository.ClienteRepository;
-import pe.com.fadide.sisco.specification.Especificaciones;
+import pe.com.fadide.sisco.util.Especificaciones;
 
 // Patrón Singleton: bean de Spring con una única instancia
 @Service

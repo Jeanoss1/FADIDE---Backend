@@ -20,7 +20,7 @@ import pe.com.fadide.sisco.model.Usuario;
 import pe.com.fadide.sisco.repository.RolRepository;
 import pe.com.fadide.sisco.repository.UsuarioRepository;
 import pe.com.fadide.sisco.service.UsuarioService;
-import pe.com.fadide.sisco.specification.Especificaciones;
+import pe.com.fadide.sisco.util.Especificaciones;
 
 @Service
 @RequiredArgsConstructor

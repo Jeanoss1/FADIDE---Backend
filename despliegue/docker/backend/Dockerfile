@@ -24,7 +24,9 @@ RUN useradd -r -m -d /opt/tomcat -s /bin/false tomcat \
  && tar xzf apache-tomcat-${TOMCAT_VERSION}.tar.gz -C /opt/tomcat --strip-components=1 \
  && rm apache-tomcat-${TOMCAT_VERSION}.tar.gz \
  && rm -rf /opt/tomcat/webapps/* \
- && chown -R tomcat:tomcat /opt/tomcat \
+ && sed -i 's/<Connector port="8080" protocol="HTTP\/1.1"/<Connector port="8080" protocol="HTTP\/1.1" maxSwallowSize="20971520"/' /opt/tomcat/conf/server.xml \
+ && mkdir -p /var/lib/sisco/evidencias \
+ && chown -R tomcat:tomcat /opt/tomcat /var/lib/sisco \
  && chmod +x /opt/tomcat/bin/*.sh
 
 # setenv.sh: memoria de la JVM y modo headless. Las credenciales llegan como variables de

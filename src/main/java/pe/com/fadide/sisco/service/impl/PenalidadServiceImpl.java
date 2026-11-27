@@ -19,7 +19,7 @@ import pe.com.fadide.sisco.model.Penalidad;
 import pe.com.fadide.sisco.repository.ContratoRepository;
 import pe.com.fadide.sisco.repository.PenalidadRepository;
 import pe.com.fadide.sisco.service.PenalidadService;
-import pe.com.fadide.sisco.specification.Especificaciones;
+import pe.com.fadide.sisco.util.Especificaciones;
 
 @Service
 @RequiredArgsConstructor

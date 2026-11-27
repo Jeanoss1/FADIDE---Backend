@@ -53,6 +53,10 @@ services:
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
       SHOW_SQL: "false"
       CARGAR_DATOS_DEMO: ${CARGAR_DATOS_DEMO:-true}
+      EVIDENCIAS_DIR: /var/lib/sisco/evidencias
+    volumes:
+      # Archivos de evidencia subidos por los supervisores (persisten entre redespliegues)
+      - sisco-evidencias:/var/lib/sisco/evidencias
     ports:
       - "8080:8080"
     networks:
@@ -87,3 +91,5 @@ networks:
 volumes:
   sisco-bd-datos:
     name: sisco-bd-datos
+  sisco-evidencias:
+    name: sisco-evidencias

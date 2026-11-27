@@ -24,7 +24,7 @@ import pe.com.fadide.sisco.config.BadRequestException;
 import pe.com.fadide.sisco.dto.FiltroBusqueda;
 import pe.com.fadide.sisco.dto.OpcionResponse;
 import pe.com.fadide.sisco.dto.TablaReporte;
-import pe.com.fadide.sisco.exportacion.ExportadorReporte;
+import pe.com.fadide.sisco.service.ExportadorReporte;
 import pe.com.fadide.sisco.service.ReporteService;
 
 /**

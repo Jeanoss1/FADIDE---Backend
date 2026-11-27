@@ -20,7 +20,7 @@ import pe.com.fadide.sisco.model.Pago;
 import pe.com.fadide.sisco.repository.ContratoRepository;
 import pe.com.fadide.sisco.repository.PagoRepository;
 import pe.com.fadide.sisco.service.PagoService;
-import pe.com.fadide.sisco.specification.Especificaciones;
+import pe.com.fadide.sisco.util.Especificaciones;
 
 @Service
 @RequiredArgsConstructor

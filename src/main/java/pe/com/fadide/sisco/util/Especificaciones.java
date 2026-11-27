@@ -1,4 +1,4 @@
-package pe.com.fadide.sisco.specification;
+package pe.com.fadide.sisco.util;
 
 import java.time.LocalDate;
 import java.util.ArrayList;

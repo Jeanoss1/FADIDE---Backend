@@ -1,4 +1,4 @@
-package pe.com.fadide.sisco.exportacion;
+package pe.com.fadide.sisco.service.impl;
 
 import java.awt.Color;
 import java.io.ByteArrayOutputStream;
@@ -20,6 +20,7 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 
 import pe.com.fadide.sisco.dto.TablaReporte;
+import pe.com.fadide.sisco.service.ExportadorReporte;
 
 /** Estrategia PDF: A4 horizontal con encabezado de marca, tabla con filas alternadas y totales. */
 @Component
